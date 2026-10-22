@@ -1,0 +1,14 @@
+{
+  "name": "asesmen-asn",
+  "private": true,
+  "workspaces": [
+    "backend"
+  ],
+  "scripts": {
+    "test": "bun --filter backend test",
+    "dev:backend": "bun --filter backend dev"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
