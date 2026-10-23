@@ -64,6 +64,7 @@ export interface AssessmentSession {
   waktu_selesai: string;
   durasi_menit: number;
   status: SessionStatus;
+  target_jenjang?: JenjangJabatan | null;
   created_at: string;
   total_peserta?: number;
   participants?: SessionParticipant[];

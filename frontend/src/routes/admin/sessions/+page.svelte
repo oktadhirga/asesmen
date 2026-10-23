@@ -21,6 +21,18 @@
   let newTargetJenjang = $state<string>("PELAKSANA");
   let modalErrorMessage = $state<string | null>(null);
 
+  // Modal Edit Sesi
+  let isEditModalOpen = $state(false);
+  let editingSession = $state<AssessmentSession | null>(null);
+  let editJudul = $state("");
+  let editDeskripsi = $state("");
+  let editDurasiMenit = $state(90);
+  let editWaktuMulai = $state("");
+  let editWaktuSelesai = $state("");
+  let editTargetJenjang = $state<string>("PELAKSANA");
+  let editModalErrorMessage = $state<string | null>(null);
+  let isEditSubmitting = $state(false);
+
   async function loadSessions() {
     isLoading = true;
     errorMessage = null;
@@ -106,6 +118,76 @@
       modalErrorMessage = err.message || "Terjadi kesalahan saat membuat sesi.";
     } finally {
       isSubmitting = false;
+    }
+  }
+
+  function openEditModal(session: AssessmentSession) {
+    editingSession = session;
+    editJudul = session.judul;
+    editDeskripsi = session.deskripsi || "";
+    editDurasiMenit = session.durasi_menit || 90;
+    editTargetJenjang = session.target_jenjang || "PELAKSANA";
+    editModalErrorMessage = null;
+
+    if (session.waktu_mulai) {
+      editWaktuMulai = new Date(session.waktu_mulai).toISOString().slice(0, 16);
+    }
+    if (session.waktu_selesai) {
+      editWaktuSelesai = new Date(session.waktu_selesai).toISOString().slice(0, 16);
+    }
+
+    isEditModalOpen = true;
+  }
+
+  async function handleUpdateSession() {
+    if (!editingSession) return;
+    editModalErrorMessage = null;
+
+    if (!editJudul.trim()) {
+      editModalErrorMessage = "Judul sesi asesmen wajib diisi.";
+      return;
+    }
+
+    if (!editWaktuMulai || !editWaktuSelesai) {
+      editModalErrorMessage = "Waktu mulai dan waktu selesai wajib diisi.";
+      return;
+    }
+
+    const startTime = new Date(editWaktuMulai);
+    const endTime = new Date(editWaktuSelesai);
+    if (endTime <= startTime) {
+      editModalErrorMessage = "Waktu selesai harus lebih akhir dari waktu mulai.";
+      return;
+    }
+
+    isEditSubmitting = true;
+
+    try {
+      const payload: any = {
+        judul: editJudul.trim(),
+        durasi_menit: Number(editDurasiMenit) || 60,
+        waktu_mulai: startTime.toISOString(),
+        waktu_selesai: endTime.toISOString(),
+        deskripsi: editDeskripsi.trim() || null,
+      };
+
+      if (editingSession.status === "DRAFT") {
+        payload.target_jenjang = editTargetJenjang;
+      }
+
+      const res = await ApiClient.put(`/sessions/${editingSession.id}`, payload);
+
+      if (res.success) {
+        successMessage = `Sesi asesmen "${editJudul}" berhasil diperbarui.`;
+        isEditModalOpen = false;
+        await loadSessions();
+      } else {
+        editModalErrorMessage = res.message || "Gagal memperbarui sesi.";
+      }
+    } catch (err: any) {
+      editModalErrorMessage = err.message || "Terjadi kesalahan saat memperbarui sesi.";
+    } finally {
+      isEditSubmitting = false;
     }
   }
 
@@ -268,13 +350,24 @@
                       variant="primary"
                       size="sm"
                       onclick={() => (window.location.href = `/admin/sessions/${session.id}`)}
+                      title="Lihat Daftar Peserta & Monitor Proctoring"
                     >
                       Proctoring &amp; Peserta
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onclick={() => openEditModal(session)}
+                      title="Sunting Parameter Sesi Asesmen"
+                    >
+                      Edit
                     </Button>
                     <Button
                       variant="danger"
                       size="sm"
                       onclick={() => deleteSession(session)}
+                      disabled={session.status === "BERJALAN"}
+                      title={session.status === "BERJALAN" ? "Sesi sedang berjalan tidak dapat dihapus" : "Hapus Sesi"}
                     >
                       Hapus
                     </Button>
@@ -383,6 +476,106 @@
     </Button>
   {/snippet}
 </Modal>
+
+<!-- Modal Edit Sesi Asesmen -->
+{#if isEditModalOpen && editingSession}
+  <Modal
+    bind:isOpen={isEditModalOpen}
+    title={`Edit Sesi Asesmen: ${editingSession.kode_sesi}`}
+    size="md"
+  >
+    <form onsubmit={(e) => { e.preventDefault(); handleUpdateSession(); }} class="modal-form">
+      {#if editModalErrorMessage}
+        <Alert variant="error">{editModalErrorMessage}</Alert>
+      {/if}
+
+      {#if editingSession.status === "BERJALAN"}
+        <Alert variant="warning">
+          <strong>Perhatian:</strong> Sesi sedang berjalan. Kode sesi dan target jenjang dikunci demi menjaga validitas pengerjaan peserta yang sedang aktif.
+        </Alert>
+      {:else if editingSession.status === "SELESAI"}
+        <Alert variant="info">
+          Sesi ini telah selesai. Anda hanya dapat memperbarui judul arsip atau catatan deskripsi.
+        </Alert>
+      {/if}
+
+      <Input
+        label="Kode Sesi (Read-Only)"
+        value={editingSession.kode_sesi}
+        disabled
+        helperText="Kode sesi unik tidak dapat diubah setelah dibuat"
+      />
+
+      <Input
+        label="Judul Sesi Asesmen"
+        required
+        bind:value={editJudul}
+        disabled={isEditSubmitting}
+      />
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="select-edit-target-jenjang" class="form-label">Target Jenjang Jabatan</label>
+          <select
+            id="select-edit-target-jenjang"
+            class="form-select"
+            bind:value={editTargetJenjang}
+            disabled={isEditSubmitting || editingSession.status !== "DRAFT"}
+          >
+            <option value="PELAKSANA">Pelaksana</option>
+            <option value="PENGAWAS">Pengawas (Eselon IV)</option>
+            <option value="ADMINISTRATOR">Administrator (Eselon III)</option>
+            <option value="JPT">Jabatan Pimpinan Tinggi (JPT)</option>
+          </select>
+        </div>
+
+        <Input
+          label="Durasi Pengerjaan (Menit)"
+          type="number"
+          min="15"
+          max="300"
+          required
+          bind:value={editDurasiMenit}
+          disabled={isEditSubmitting || editingSession.status === "SELESAI"}
+        />
+      </div>
+
+      <Input
+        label="Deskripsi / Catatan Tambahan (Opsional)"
+        placeholder="Keterangan ruangan, sasaran eselon, dsb"
+        bind:value={editDeskripsi}
+        disabled={isEditSubmitting}
+      />
+
+      <div class="form-row">
+        <Input
+          label="Waktu Mulai"
+          type="datetime-local"
+          required
+          bind:value={editWaktuMulai}
+          disabled={isEditSubmitting || editingSession.status !== "DRAFT"}
+        />
+
+        <Input
+          label="Waktu Selesai (Batas Akhir)"
+          type="datetime-local"
+          required
+          bind:value={editWaktuSelesai}
+          disabled={isEditSubmitting}
+        />
+      </div>
+    </form>
+
+    {#snippet footer()}
+      <Button variant="secondary" onclick={() => (isEditModalOpen = false)} disabled={isEditSubmitting}>
+        Batal
+      </Button>
+      <Button variant="gold" onclick={handleUpdateSession} isLoading={isEditSubmitting}>
+        {isEditSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
+      </Button>
+    {/snippet}
+  </Modal>
+{/if}
 
 <style>
   .sessions-page {
