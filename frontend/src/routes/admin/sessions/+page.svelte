@@ -18,6 +18,8 @@
   let newDurasiMenit = $state(90);
   let newWaktuMulai = $state("");
   let newWaktuSelesai = $state("");
+  let newTargetJenjang = $state<string>("PELAKSANA");
+  let modalErrorMessage = $state<string | null>(null);
 
   async function loadSessions() {
     isLoading = true;
@@ -43,6 +45,8 @@
     newJudul = "";
     newDeskripsi = "";
     newDurasiMenit = 90;
+    newTargetJenjang = "PELAKSANA";
+    modalErrorMessage = null;
 
     const now = new Date();
     const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
@@ -53,33 +57,53 @@
   }
 
   async function handleCreateSession() {
+    modalErrorMessage = null;
     if (!newKodeSesi.trim() || !newJudul.trim()) {
-      errorMessage = "Kode sesi dan judul sesi wajib diisi.";
+      modalErrorMessage = "Kode sesi dan judul sesi wajib diisi.";
+      return;
+    }
+
+    if (!newWaktuMulai || !newWaktuSelesai) {
+      modalErrorMessage = "Waktu mulai dan waktu selesai wajib diisi.";
+      return;
+    }
+
+    const startTime = new Date(newWaktuMulai);
+    const endTime = new Date(newWaktuSelesai);
+    if (endTime <= startTime) {
+      modalErrorMessage = "Waktu selesai harus lebih akhir dari waktu mulai.";
       return;
     }
 
     isSubmitting = true;
-    errorMessage = null;
 
     try {
-      const res = await ApiClient.post<AssessmentSession>("/sessions", {
+      const payload: any = {
         kode_sesi: newKodeSesi.trim(),
         judul: newJudul.trim(),
-        deskripsi: newDeskripsi.trim() || null,
-        durasi_menit: Number(newDurasiMenit),
-        waktu_mulai: new Date(newWaktuMulai).toISOString(),
-        waktu_selesai: new Date(newWaktuSelesai).toISOString(),
-      });
+        durasi_menit: Number(newDurasiMenit) || 60,
+        waktu_mulai: startTime.toISOString(),
+        waktu_selesai: endTime.toISOString(),
+      };
+
+      if (newDeskripsi.trim()) {
+        payload.deskripsi = newDeskripsi.trim();
+      }
+      if (newTargetJenjang) {
+        payload.target_jenjang = newTargetJenjang;
+      }
+
+      const res = await ApiClient.post<AssessmentSession>("/sessions", payload);
 
       if (res.success) {
         successMessage = `Sesi asesmen "${newJudul}" berhasil dibuat.`;
         isCreateModalOpen = false;
         await loadSessions();
       } else {
-        errorMessage = res.message || "Gagal membuat sesi baru.";
+        modalErrorMessage = res.message || "Gagal membuat sesi baru.";
       }
     } catch (err: any) {
-      errorMessage = err.message || "Terjadi kesalahan saat membuat sesi.";
+      modalErrorMessage = err.message || "Terjadi kesalahan saat membuat sesi.";
     } finally {
       isSubmitting = false;
     }
@@ -272,6 +296,12 @@
   size="md"
 >
   <form onsubmit={(e) => { e.preventDefault(); handleCreateSession(); }} class="modal-form">
+    {#if modalErrorMessage}
+      <Alert variant="error">
+        {modalErrorMessage}
+      </Alert>
+    {/if}
+
     <Input
       label="Kode Sesi (Unik)"
       placeholder="Contoh: SESI-TRENGGALEK-01"
@@ -289,14 +319,24 @@
       disabled={isSubmitting}
     />
 
-    <Input
-      label="Deskripsi / Catatan Tambahan"
-      placeholder="Keterangan ruangan, sasaran eselon, dsb"
-      bind:value={newDeskripsi}
-      disabled={isSubmitting}
-    />
-
     <div class="form-row">
+      <div class="form-group">
+        <label for="select-target-jenjang" class="form-label">
+          Target Jenjang Jabatan
+        </label>
+        <select
+          id="select-target-jenjang"
+          class="form-select"
+          bind:value={newTargetJenjang}
+          disabled={isSubmitting}
+        >
+          <option value="PELAKSANA">Pelaksana</option>
+          <option value="PENGAWAS">Pengawas (Eselon IV)</option>
+          <option value="ADMINISTRATOR">Administrator (Eselon III)</option>
+          <option value="JPT">Jabatan Pimpinan Tinggi (JPT)</option>
+        </select>
+      </div>
+
       <Input
         label="Durasi Pengerjaan (Menit)"
         type="number"
@@ -306,7 +346,16 @@
         bind:value={newDurasiMenit}
         disabled={isSubmitting}
       />
+    </div>
 
+    <Input
+      label="Deskripsi / Catatan Tambahan (Opsional)"
+      placeholder="Keterangan ruangan, sasaran eselon, dsb"
+      bind:value={newDeskripsi}
+      disabled={isSubmitting}
+    />
+
+    <div class="form-row">
       <Input
         label="Waktu Mulai"
         type="datetime-local"
@@ -314,15 +363,15 @@
         bind:value={newWaktuMulai}
         disabled={isSubmitting}
       />
-    </div>
 
-    <Input
-      label="Waktu Selesai (Batas Akhir)"
-      type="datetime-local"
-      required
-      bind:value={newWaktuSelesai}
-      disabled={isSubmitting}
-    />
+      <Input
+        label="Waktu Selesai (Batas Akhir)"
+        type="datetime-local"
+        required
+        bind:value={newWaktuSelesai}
+        disabled={isSubmitting}
+      />
+    </div>
   </form>
 
   {#snippet footer()}
@@ -471,6 +520,33 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--space-3);
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .form-label {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text-main);
+  }
+
+  .form-select {
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: #ffffff;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-main);
+    outline: none;
+    transition: border-color var(--transition-fast);
+  }
+
+  .form-select:focus {
+    border-color: var(--color-brand-primary);
   }
 
   .spinner {

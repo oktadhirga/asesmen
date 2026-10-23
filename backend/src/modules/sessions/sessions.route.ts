@@ -177,18 +177,20 @@ export const sessionsRoute = new Elysia()
           beforeHandle: requireAdmin,
           body: t.Object({
             judul: t.String({ minLength: 3 }),
-            deskripsi: t.Optional(t.String()),
+            deskripsi: t.Optional(t.Nullable(t.String())),
             kode_sesi: t.String({ minLength: 3 }),
             waktu_mulai: t.String(),
             waktu_selesai: t.String(),
             durasi_menit: t.Optional(t.Number({ minimum: 10 })),
             target_jenjang: t.Optional(
-              t.Union([
-                t.Literal("PELAKSANA"),
-                t.Literal("PENGAWAS"),
-                t.Literal("ADMINISTRATOR"),
-                t.Literal("JPT"),
-              ])
+              t.Nullable(
+                t.Union([
+                  t.Literal("PELAKSANA"),
+                  t.Literal("PENGAWAS"),
+                  t.Literal("ADMINISTRATOR"),
+                  t.Literal("JPT"),
+                ])
+              )
             ),
           }),
         }
@@ -243,18 +245,20 @@ export const sessionsRoute = new Elysia()
           }),
           body: t.Object({
             judul: t.Optional(t.String()),
-            deskripsi: t.Optional(t.String()),
+            deskripsi: t.Optional(t.Nullable(t.String())),
             kode_sesi: t.Optional(t.String()),
             waktu_mulai: t.Optional(t.String()),
             waktu_selesai: t.Optional(t.String()),
             durasi_menit: t.Optional(t.Number()),
             target_jenjang: t.Optional(
-              t.Union([
-                t.Literal("PELAKSANA"),
-                t.Literal("PENGAWAS"),
-                t.Literal("ADMINISTRATOR"),
-                t.Literal("JPT"),
-              ])
+              t.Nullable(
+                t.Union([
+                  t.Literal("PELAKSANA"),
+                  t.Literal("PENGAWAS"),
+                  t.Literal("ADMINISTRATOR"),
+                  t.Literal("JPT"),
+                ])
+              )
             ),
             status: t.Optional(
               t.Union([
