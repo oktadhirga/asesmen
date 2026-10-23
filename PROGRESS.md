@@ -15,8 +15,8 @@
 | **4** | Modul Users (CRUD ASN & Asesor) | ✅ Selesai | — | CRUD master user lengkap via Drizzle ORM, paginasi, pencarian nama/NIP, filter jenjang/role, proteksi NIP unik, auto-hash password Bcrypt, dan proteksi self-deletion akun Admin. |
 | **5** | Modul Competency (9 Dimensi) | ✅ Selesai | — | Endpoint referensi 9 dimensi PermenPANRB 38/2017 (8 Manajerial + 1 Sosio Kultural), filter kategori, detail dimensi, dan pembaruan bobot standar & deskripsi oleh Admin. |
 | **6** | Modul Questions (Bank Soal SJT) | ✅ Selesai | — | CRUD bank soal SJT lengkap via Drizzle ORM, validasi ketat 4 opsi berbobot unik 1 s.d. 4, filter competency/target level, pencarian kasus, dan cascade delete opsi. |
-| **7** | Modul Sessions (Sesi & Penjadwalan) | ⏳ Siap Dikerjakan | — | Manajemen sesi, token akses unik peserta, status DRAFT/BERJALAN/SELESAI. |
-| **8** | Modul Exams (Core Engine & Proctoring) | ⏳ Menunggu | — | Acak soal & opsi, timer tersinkron server, autosave per klik, deteksi tab switch. |
+| **7** | Modul Sessions (Sesi & Penjadwalan) | ✅ Selesai | — | Manajemen jadwal sesi berbatas waktu, token akses unik per peserta (`ASN-XXXXXX`), pencegahan duplikasi, endpoint verifikasi token peserta, dan siklus status `DRAFT` → `BERJALAN` → `SELESAI`. |
+| **8** | Modul Exams (Core Engine & Proctoring) | ⏳ Siap Dikerjakan | — | Acak soal & opsi, timer tersinkron server, autosave per klik, deteksi tab switch. |
 | **9** | Modul Reports (Kalkulasi JPM & Radar) | ⏳ Menunggu | — | Kalkulasi nilai per dimensi, persentase JPM, kategori kelulusan (MS/MMS/KMS). |
 | **10** | Frontend Setup & Design System | ⏳ Menunggu | — | Inisialisasi SvelteKit, Vanilla CSS Design System bertema Portal Pemerintahan. |
 | **11** | Frontend Admin | ⏳ Menunggu | — | Dashboard, CRUD master data, live monitoring proctoring ujian peserta. |
@@ -85,6 +85,16 @@ Database MySQL `ases_men` telah memiliki 7 tabel fisik:
 - `QuestionsService.deleteQuestion(id)`: Penghapusan soal disertai pembersihan (*cascade delete*) opsi jawaban terkait.
 - `questionsRoute`: Seluruh endpoint bank soal diproteksi khusus Administrator/Asesor (`requireAdmin`).
 
+### 7. Modul Sessions (Sesi & Penjadwalan Asesmen)
+- `SessionsService.listSessions(params)`: Mengambil daftar sesi asesmen terpaginasi beserta kalkulasi dinamis jumlah peserta terdaftar.
+- `SessionsService.getSessionById(id)`: Mengambil detail sesi lengkap dengan profil peserta terdaftar.
+- `SessionsService.createSession(data)`: Validasi keunikan `kode_sesi`, validasi rentang waktu (`waktu_selesai > waktu_mulai`), dan inisialisasi status `DRAFT`.
+- `SessionsService.updateSession(id, data)`: Mengubah metadata jadwal atau memperbarui status siklus sesi (`DRAFT` → `BERJALAN` → `SELESAI`).
+- `SessionsService.deleteSession(id)`: Menghapus sesi asesmen beserta *cascade delete* peserta dan jawaban terkait.
+- `SessionsService.addParticipants(sessionId, userIds)`: Mendaftarkan ASN ke sesi tertentu dengan membuat `token_akses` unik (`ASN-XXXXXX`) dan mencegah duplikasi peserta.
+- `SessionsService.verifyToken(userId, kodeSesi, tokenAkses)`: Memvalidasi hak akses peserta terhadap sesi yang berstatus `BERJALAN` sebagai gerbang masuk ujian.
+- `SessionsService.getMySessions(userId)`: Mengambil daftar jadwal ujian yang diikuti oleh ASN yang sedang login.
+
 ---
 
 ## Status Pengujian Otomatis (TDD Suite)
@@ -98,7 +108,8 @@ tests/modules/auth/auth.test.ts  9 pass (27 expect calls)
 tests/modules/users/users.test.ts 13 pass (49 expect calls)
 tests/modules/competency/competency.test.ts 10 pass (32 expect calls)
 tests/modules/questions/questions.test.ts 14 pass (44 expect calls)
+tests/modules/sessions/sessions.test.ts 16 pass (53 expect calls)
 ---------------------------------------------------------
-Total                            59 pass, 0 fail (298 assertions)
+Total                            75 pass, 0 fail (351 assertions)
 TypeScript Compilation           0 errors (Exit code 0)
 ```

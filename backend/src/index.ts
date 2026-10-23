@@ -5,6 +5,7 @@ import { authRoute } from "./modules/auth/auth.route";
 import { usersRoute } from "./modules/users/users.route";
 import { competencyRoute } from "./modules/competency/competency.route";
 import { questionsRoute } from "./modules/questions/questions.route";
+import { sessionsRoute } from "./modules/sessions/sessions.route.ts";
 
 const port = Number(process.env.PORT) || 3000;
 const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
@@ -30,6 +31,7 @@ export const app = new Elysia()
       .use(usersRoute)
       .use(competencyRoute)
       .use(questionsRoute)
+      .use(sessionsRoute)
   )
   .listen(port);
 
