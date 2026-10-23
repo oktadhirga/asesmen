@@ -23,7 +23,7 @@
 | **10** | Frontend Setup & Design System | ✅ Selesai | — | SvelteKit (Svelte 5 runes) + Vanilla CSS Design Tokens bertema Portal Pemerintahan (Indonesian Royal Navy & Heritage Gold), A11y WCAG 2.1 AA, pure SVG Radar Chart 9 Dimensi, Auth Store, API Client, dan komponen UI modular lengkap. |
 | **11** | Frontend Admin | ✅ Selesai | — | Dashboard statistik, CRUD master data (pegawai & bank soal SJT), manajemen sesi & siklus, Live Proctoring tab-switch monitor, dan rekapitulasi JPM radar chart. |
 | **12** | Frontend Peserta | ✅ Selesai | — | Portal peserta ujian ASN: dashboard jadwal sesi & input token akses, ruang ujian SJT fokus penuh dengan countdown timer & proctoring tab-switch counter, autosave real-time per respons, palet butir soal, dan laporan resmi JPM + visualisasi Spider Radar Chart 9 dimensi PermenPANRB 38/2017. |
-| **13** | Integration Test End-to-End | ⏳ Siap Dikerjakan | — | Pengujian siklus penuh asesmen dari login, pengerjaan, hingga rekapitulasi. |
+| **13** | Integration Test End-to-End | ✅ Selesai | — | Pengujian siklus penuh asesmen ASN dari autentikasi admin/peserta, setup master data, verifikasi token akses, core engine autosave SJT, proctoring tab-switch counter, submit lembar jawaban, hingga laporan individual radar chart 9 dimensi dan rekapitulasi JPM sesi. |
 
 ---
 
@@ -198,6 +198,16 @@ Database MySQL `ases_men` telah memiliki 7 tabel fisik:
   - Analisis dimensi kekuatan utama (*Strength*) dan prioritas rencana pengembangan (*Need Improvement*).
   - Tombol cetak / simpan PDF teroptimasi `@media print` lengkap dengan format tanda tangan pengesahan.
 
+### 13. Modul Integration Test End-to-End (E2E)
+- **Suite Pengujian Siklus Penuh Asesmen ASN** ([backend/tests/integration/e2e-assessment-lifecycle.test.ts](file:///d:/Development/assessment/backend/tests/integration/e2e-assessment-lifecycle.test.ts)):
+  - **Fase 1 (Autentikasi Admin & Setup Master Data)**: Login JWT Administrator, validasi `/auth/me`, registrasi ASN baru (`POST /api/users`), cek 9 dimensi SKJ, dan pembuatan butir soal SJT baru dengan 4 opsi berbobot 1 s.d. 4.
+  - **Fase 2 (Penjadwalan Sesi & Pendaftaran Peserta)**: Pembuatan sesi berstatus `DRAFT`, pendaftaran pegawai dengan auto-generate token akses unik (`ASN-XXXXXX`), pencegahan duplikasi pendaftaran (400), dan aktivasi sesi ke status `BERJALAN`.
+  - **Fase 3 (Login Peserta & Verifikasi Token)**: Login ASN dengan NIP & password, pengecekan jadwal di `/my-sessions`, penolakan token salah (400/422), dan start ujian dengan token valid (`status: SEDANG_MENGERJAKAN`).
+  - **Fase 4 (Core Engine SJT, Autosave & Proctoring)**: Pengambilan paket butir soal deterministik (verifikasi bobot nilai 1-4 tidak bocor ke klien), pengerjaan ujian per butir dengan autosave real-time, penandaan ragu-ragu, simulasi deteksi perpindahan tab browser (`POST /tab-switch`), dan sinkronisasi countdown timer.
+  - **Fase 5 (Submit Ujian & Penguncian)**: Pengumpulan lembar jawaban (`status: SELESAI`, pencatatan waktu submit), dan proteksi penolakan modifikasi jawaban pasca-submit (400).
+  - **Fase 6 (Laporan Individual & Radar Chart 9 Dimensi)**: Pengambilan laporan JPM % individu, klasifikasi kategori (MS / MMS / KMS), dataset radar chart 9 dimensi (skor, standar SKJ, gap, pemenuhan), dan proteksi isolasi data laporan antar peserta (403 Forbidden).
+  - **Fase 7 (Rekapitulasi Sesi & Auto-Recalculate)**: Laporan sesi agregat bagi Administrator (statistik, distribusi kelulusan, dan leaderboard peringkat), eksekusi trigger rekalkulasi otomatis, dan penutupan sesi menjadi `SELESAI`.
+
 ---
 
 ## Status Pengujian Otomatis (TDD Suite)
@@ -205,16 +215,17 @@ Database MySQL `ases_men` telah memiliki 7 tabel fisik:
 Semua pengujian berjalan menggunakan runner `bun test` dengan status **100% GREEN**:
 
 ```
-tests/db/schema.test.ts          8 pass (58 expect calls)
-tests/db/seed.test.ts            5 pass (88 expect calls)
-tests/modules/auth/auth.test.ts  9 pass (27 expect calls)
-tests/modules/users/users.test.ts 13 pass (49 expect calls)
-tests/modules/competency/competency.test.ts 10 pass (32 expect calls)
-tests/modules/questions/questions.test.ts 14 pass (44 expect calls)
-tests/modules/sessions/sessions.test.ts 16 pass (53 expect calls)
-tests/modules/exams/exams.test.ts 10 pass (384 expect calls)
-tests/modules/reports/reports.test.ts 8 pass (99 expect calls)
----------------------------------------------------------
-Total                            93 pass, 0 fail (834 assertions)
-TypeScript Compilation           0 errors (Exit code 0)
+tests/db/schema.test.ts                          8 pass (58 expect calls)
+tests/db/seed.test.ts                            5 pass (88 expect calls)
+tests/modules/auth/auth.test.ts                  9 pass (27 expect calls)
+tests/modules/users/users.test.ts               13 pass (49 expect calls)
+tests/modules/competency/competency.test.ts     10 pass (32 expect calls)
+tests/modules/questions/questions.test.ts       14 pass (44 expect calls)
+tests/modules/sessions/sessions.test.ts         16 pass (53 expect calls)
+tests/modules/exams/exams.test.ts               10 pass (384 expect calls)
+tests/modules/reports/reports.test.ts            8 pass (99 expect calls)
+tests/integration/e2e-assessment-lifecycle.test.ts 24 pass (281 expect calls)
+-----------------------------------------------------------------------------
+Total                                          117 pass, 0 fail (1115 assertions)
+TypeScript / Svelte Compilation                  0 errors, 0 warnings (Exit code 0)
 ```
