@@ -17,8 +17,8 @@
 | **6** | Modul Questions (Bank Soal SJT) | ✅ Selesai | — | CRUD bank soal SJT lengkap via Drizzle ORM, validasi ketat 4 opsi berbobot unik 1 s.d. 4, filter competency/target level, pencarian kasus, dan cascade delete opsi. |
 | **7** | Modul Sessions (Sesi & Penjadwalan) | ✅ Selesai | — | Manajemen jadwal sesi berbatas waktu, token akses unik per peserta (`ASN-XXXXXX`), pencegahan duplikasi, endpoint verifikasi token peserta, dan siklus status `DRAFT` → `BERJALAN` → `SELESAI`. |
 | **8** | Modul Exams (Core Engine & Proctoring) | ✅ Selesai | — | Engine pelaksanaan ujian SJT, pengacakan deterministik butir & opsi jawaban, penyembunyian bobot nilai dari klien, autosave real-time per klik, pencatatan pelanggaran tab-switch proctoring, dan penguncian lembar submit. |
-| **9** | Modul Reports (Kalkulasi JPM & Radar) | ⏳ Siap Dikerjakan | — | Kalkulasi nilai per dimensi, persentase JPM, kategori kelulusan (MS/MMS/KMS). |
-| **10** | Frontend Setup & Design System | ⏳ Menunggu | — | Inisialisasi SvelteKit, Vanilla CSS Design System bertema Portal Pemerintahan. |
+| **9** | Modul Reports (Kalkulasi JPM & Radar) | ✅ Selesai | — | Kalkulasi skor 9 dimensi, gap analisis, persentase JPM, visualisasi radar chart dataset, kategori kelulusan (MS/MMS/KMS), rekap sesi, dan rekalkulasi otomatis. |
+| **10** | Frontend Setup & Design System | ⏳ Siap Dikerjakan | — | Inisialisasi SvelteKit, Vanilla CSS Design System bertema Portal Pemerintahan. |
 | **11** | Frontend Admin | ⏳ Menunggu | — | Dashboard, CRUD master data, live monitoring proctoring ujian peserta. |
 | **12** | Frontend Peserta | ⏳ Menunggu | — | Antarmuka ujian SJT terawasi, navigasi soal, timer, dan visualisasi Radar Chart. |
 | **13** | Integration Test End-to-End | ⏳ Menunggu | — | Pengujian siklus penuh asesmen dari login, pengerjaan, hingga rekapitulasi. |
@@ -103,6 +103,26 @@ Database MySQL `ases_men` telah memiliki 7 tabel fisik:
 - `ExamsService.getExamStatus(userId, participantId)`: Sinkronisasi waktu aktif server, menghitung sisa durasi pengerjaan, jumlah terjawab, dan status ragu-ragu.
 - `ExamsService.submitExam(userId, participantId)`: Mengunci lembar jawaban, mengkalkulasi skor perolehan sementara, dan mengubah status peserta ke `SELESAI` (menolak pengiriman jawaban susulan).
 
+### 9. Modul Reports (Kalkulasi JPM & Radar Chart)
+- `ReportsService.calculateParticipantReport(participantId)`:
+  - Mengambil seluruh jawaban peserta dan memetakan ke 9 dimensi kompetensi PermenPANRB 38/2017.
+  - Menghitung perolehan skor per dimensi, standar kompetensi jabatan peserta, dan selisih (*gap analysis*).
+  - Menghitung akumulasi skor total dan persentase **JPM (Jumlah Pemenuhan Standar)**:
+    $$\text{Persentase JPM} = \frac{\sum \text{Skor Riil}}{\sum \text{Skor Standar}} \times 100\%$$
+  - Mengkategorisasikan predikat kelulusan asesmen sesuai regulasi ASN:
+    - **MS (Memenuhi Syarat)**: $\ge 80.0\%$
+    - **MMS (Masih Memenuhi Syarat)**: $68.0\% - 79.9\%$
+    - **KMS (Kurang Memenuhi Syarat)**: $< 68.0\%$
+  - Menyiapkan format dataset siap konsumsi untuk komponen grafik radar (*Radar Chart data points*).
+- `ReportsService.getSessionReport(sessionId)`:
+  - Mengagregasi seluruh peserta dalam satu sesi asesmen: peringkat nilai, rata-rata nilai sesi, nilai tertinggi & terendah, serta statistik sebaran kategori kelulusan (jumlah & persentase peserta MS, MMS, dan KMS).
+- `ReportsService.recalculateParticipantScore(participantId)`:
+  - Memicu kalkulasi ulang berbasis jawaban tersimpan di database dan memperbarui kolom `total_nilai`, `persentase_jpm`, dan `status` secara atomik di tabel `session_participants`.
+- `reportsRoute`:
+  - `GET /api/reports/participant/:participantId`: Dilindungi `requireAuth`, dengan otorisasi mandiri (peserta hanya dapat melihat laporannya sendiri, admin dapat melihat semua peserta).
+  - `GET /api/reports/session/:sessionId`: Dilindungi `requireAdmin` (403 Forbidden bagi peserta).
+  - `POST /api/reports/participant/:participantId/recalculate`: Dilindungi `requireAdmin`.
+
 ---
 
 ## Status Pengujian Otomatis (TDD Suite)
@@ -118,7 +138,8 @@ tests/modules/competency/competency.test.ts 10 pass (32 expect calls)
 tests/modules/questions/questions.test.ts 14 pass (44 expect calls)
 tests/modules/sessions/sessions.test.ts 16 pass (53 expect calls)
 tests/modules/exams/exams.test.ts 10 pass (384 expect calls)
+tests/modules/reports/reports.test.ts 8 pass (99 expect calls)
 ---------------------------------------------------------
-Total                            85 pass, 0 fail (735 assertions)
+Total                            93 pass, 0 fail (834 assertions)
 TypeScript Compilation           0 errors (Exit code 0)
 ```
