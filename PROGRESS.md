@@ -13,8 +13,8 @@
 | **2** | Seeder: 9 Kompetensi, Soal SJT & Akun Demo | ✅ Selesai | — | 9 dimensi kompetensi PermenPANRB 38/2017, 18 soal SJT kasus nyata (4 opsi berbobot 1-4), 4 akun demo (1 Admin, 3 ASN) ber-hash Bcrypt, lolos uji idempotency. |
 | **3** | Modul Auth & Role Guard Middleware | ✅ Selesai | [#1](https://github.com/oktadhirga/asesmen/issues/1) | POST `/api/auth/login` (NIP + password), JWT signing/verifikasi, GET `/api/auth/me`, guard `requireAuth`, `requireAdmin` (403), dan `requirePeserta`. |
 | **4** | Modul Users (CRUD ASN & Asesor) | ✅ Selesai | — | CRUD master user lengkap via Drizzle ORM, paginasi, pencarian nama/NIP, filter jenjang/role, proteksi NIP unik, auto-hash password Bcrypt, dan proteksi self-deletion akun Admin. |
-| **5** | Modul Competency (9 Dimensi) | ⏳ Siap Dikerjakan | — | Endpoint referensi 9 dimensi dan pembaruan bobot standar. |
-| **6** | Modul Questions (Bank Soal SJT) | ⏳ Menunggu | — | CRUD bank soal dengan validasi ketat 4 opsi berbobot 1-4. |
+| **5** | Modul Competency (9 Dimensi) | ✅ Selesai | — | Endpoint referensi 9 dimensi PermenPANRB 38/2017 (8 Manajerial + 1 Sosio Kultural), filter kategori, detail dimensi, dan pembaruan bobot standar & deskripsi oleh Admin. |
+| **6** | Modul Questions (Bank Soal SJT) | ⏳ Siap Dikerjakan | — | CRUD bank soal dengan validasi ketat 4 opsi berbobot 1-4. |
 | **7** | Modul Sessions (Sesi & Penjadwalan) | ⏳ Menunggu | — | Manajemen sesi, token akses unik peserta, status DRAFT/BERJALAN/SELESAI. |
 | **8** | Modul Exams (Core Engine & Proctoring) | ⏳ Menunggu | — | Acak soal & opsi, timer tersinkron server, autosave per klik, deteksi tab switch. |
 | **9** | Modul Reports (Kalkulasi JPM & Radar) | ⏳ Menunggu | — | Kalkulasi nilai per dimensi, persentase JPM, kategori kelulusan (MS/MMS/KMS). |
@@ -71,6 +71,12 @@ Database MySQL `ases_men` telah memiliki 7 tabel fisik:
 - `UsersService.deleteUser(id)`: Penghapusan akun dengan proteksi anti self-deletion bagi Administrator yang sedang login.
 - `usersRoute`: Seluruh endpoint diisolasi di bawah middleware `requireAdmin` (403 Forbidden bagi Peserta).
 
+### 5. Modul Competency (9 Dimensi PermenPANRB)
+- `CompetencyService.listCompetencies(filter)`: Mengambil 9 dimensi (8 Manajerial + 1 Sosio Kultural) terurut kode, dengan filter kategori `MANAJERIAL` atau `SOSIO_KULTURAL`.
+- `CompetencyService.getCompetencyById(id)`: Mengambil detail satu dimensi kompetensi (404 jika ID tidak valid).
+- `CompetencyService.updateCompetency(id, data)`: Mengizinkan pembaruan nama, deskripsi, dan `bobot_standar` oleh Asesor/Admin.
+- `competencyRoute`: Endpoint baca (`GET`) dilindungi `requireAuth` (dapat diakses Admin dan Peserta), sedangkan mutasi (`PUT`) dilindungi `requireAdmin` (403 Forbidden bagi Peserta).
+
 ---
 
 ## Status Pengujian Otomatis (TDD Suite)
@@ -82,7 +88,8 @@ tests/db/schema.test.ts          8 pass (58 expect calls)
 tests/db/seed.test.ts            5 pass (88 expect calls)
 tests/modules/auth/auth.test.ts  9 pass (27 expect calls)
 tests/modules/users/users.test.ts 13 pass (49 expect calls)
+tests/modules/competency/competency.test.ts 10 pass (32 expect calls)
 ---------------------------------------------------------
-Total                            35 pass, 0 fail (222 assertions)
+Total                            45 pass, 0 fail (254 assertions)
 TypeScript Compilation           0 errors (Exit code 0)
 ```
