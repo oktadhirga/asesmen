@@ -18,8 +18,8 @@
 | **7** | Modul Sessions (Sesi & Penjadwalan) | ✅ Selesai | — | Manajemen jadwal sesi berbatas waktu, token akses unik per peserta (`ASN-XXXXXX`), pencegahan duplikasi, endpoint verifikasi token peserta, dan siklus status `DRAFT` → `BERJALAN` → `SELESAI`. |
 | **8** | Modul Exams (Core Engine & Proctoring) | ✅ Selesai | — | Engine pelaksanaan ujian SJT, pengacakan deterministik butir & opsi jawaban, penyembunyian bobot nilai dari klien, autosave real-time per klik, pencatatan pelanggaran tab-switch proctoring, dan penguncian lembar submit. |
 | **9** | Modul Reports (Kalkulasi JPM & Radar) | ✅ Selesai | — | Kalkulasi skor 9 dimensi, gap analisis, persentase JPM, visualisasi radar chart dataset, kategori kelulusan (MS/MMS/KMS), rekap sesi, dan rekalkulasi otomatis. |
-| **10** | Frontend Setup & Design System | ⏳ Siap Dikerjakan | — | Inisialisasi SvelteKit, Vanilla CSS Design System bertema Portal Pemerintahan. |
-| **11** | Frontend Admin | ⏳ Menunggu | — | Dashboard, CRUD master data, live monitoring proctoring ujian peserta. |
+| **10** | Frontend Setup & Design System | ✅ Selesai | — | SvelteKit (Svelte 5 runes) + Vanilla CSS Design Tokens bertema Portal Pemerintahan (Indonesian Royal Navy & Heritage Gold), A11y WCAG 2.1 AA, pure SVG Radar Chart 9 Dimensi, Auth Store, API Client, dan komponen UI modular lengkap. |
+| **11** | Frontend Admin | ⏳ Siap Dikerjakan | — | Dashboard, CRUD master data, live monitoring proctoring ujian peserta. |
 | **12** | Frontend Peserta | ⏳ Menunggu | — | Antarmuka ujian SJT terawasi, navigasi soal, timer, dan visualisasi Radar Chart. |
 | **13** | Integration Test End-to-End | ⏳ Menunggu | — | Pengujian siklus penuh asesmen dari login, pengerjaan, hingga rekapitulasi. |
 
@@ -121,7 +121,30 @@ Database MySQL `ases_men` telah memiliki 7 tabel fisik:
 - `reportsRoute`:
   - `GET /api/reports/participant/:participantId`: Dilindungi `requireAuth`, dengan otorisasi mandiri (peserta hanya dapat melihat laporannya sendiri, admin dapat melihat semua peserta).
   - `GET /api/reports/session/:sessionId`: Dilindungi `requireAdmin` (403 Forbidden bagi peserta).
-  - `POST /api/reports/participant/:participantId/recalculate`: Dilindungi `requireAdmin`.
+### 10. Frontend Setup & Design System (Portal Pemerintahan Modern)
+- **Framework & Core Stack**: SvelteKit 3 / Svelte 5 (Runes `$state`, `$derived`, `$props`), TypeScript, Vite, Vanilla CSS Design System.
+- **Design Tokens & Identitas Visual** ([design-tokens.css](file:///d:/Development/assessment/frontend/src/styles/design-tokens.css), [global.css](file:///d:/Development/assessment/frontend/src/styles/global.css)):
+  - Palet warna resmi portal pemerintahan: *Deep Indonesian Royal Navy* (`#0a2540`), *Heritage Gold / Prestise Birokrasi* (`#c99738`), *Clean Bureaucracy Slate* (`#f8fafc`), dan warna semantik standar ASN (MS Emerald `#059669`, MMS Amber `#d97706`, KMS Crimson `#dc2626`).
+  - Tipografi Google Fonts: `Plus Jakarta Sans` & `Inter`.
+  - Micro-animations, subtle multi-layered elevations (`box-shadow`), glassmorphism, custom accessibility focus ring (`:focus-visible`).
+- **Aksesibilitas (WCAG 2.1 Level AA)**:
+  - 4 status visual wajib di setiap komponen: *Idle/Default*, *Loading/Pending* (dengan animated spinner), *Error/Validation* (`aria-invalid`), dan *Disabled*.
+  - Keyboard navigation (ESC key handler pada Modal, focus trap, navigasi tab).
+- **Komponen UI Modular** ([src/lib/components/ui/](file:///d:/Development/assessment/frontend/src/lib/components/ui)):
+  - `Button.svelte`: Varian `primary`, `gold`, `secondary`, `outline`, `danger`, `ghost` dengan indikator loading spinner.
+  - `Input.svelte`: Label, helper text, error message, ARIA describedby & invalid.
+  - `Badge.svelte`: Varian semantik status kelulusan (`MS`, `MMS`, `KMS`, `ADMIN`, `PESERTA`) dengan status dot.
+  - `Card.svelte`: Kontainer kartu berstruktur header, content body, dan footer.
+  - `Alert.svelte`: Banner pemberitahuan sistem (`info`, `success`, `warning`, `error`).
+  - `Modal.svelte`: Accessible dialog modal dengan backdrop blur dan ESC keyboard listener.
+  - `Navbar.svelte`: Header portal resmi pemerintahan lengkap dengan lambang perisai/garuda emas, subtitle regulasi PermenPANRB, link navigasi dinamis berbasis role, profil NIP/jabatan pengguna, dan tombol keluar.
+  - `RadarChart.svelte`: Komponen grafik radar berbasis SVG murni (tanpa dependensi eksternal) untuk memetakan capaian riil 9 dimensi kompetensi vs standar level jabatan, polygon transparan, node interaktif, dan kartu tooltip detail nilai & gap.
+- **State Management & Networking**:
+  - `auth.svelte.ts`: Reactive auth store Svelte 5 mengelola token JWT, identitas profil pengguna, state role (`isAdmin`, `isPeserta`), login, dan logout.
+  - `client.ts`: Type-safe HTTP client dengan injeksi otomatis Authorization Bearer header, penanganan error jaringan, dan unwrap format `ApiResponse<T>`.
+- **Halaman Aktif**:
+  - `+page.svelte`: Landing page interaktif & showcase live design system tokens.
+  - `login/+page.svelte`: Formulir autentikasi resmi dengan validasi, proteksi error, dan tombol akses cepat 1-klik untuk 4 akun demo ASN.
 
 ---
 

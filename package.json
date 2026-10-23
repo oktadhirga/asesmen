@@ -2,11 +2,13 @@
   "name": "asesmen-asn",
   "private": true,
   "workspaces": [
-    "backend"
+    "backend",
+    "frontend"
   ],
   "scripts": {
     "test": "bun --filter backend test",
-    "dev:backend": "bun --filter backend dev"
+    "dev:backend": "bun --filter backend dev",
+    "dev:frontend": "bun --filter frontend dev"
   },
   "devDependencies": {
     "@types/bun": "latest"
