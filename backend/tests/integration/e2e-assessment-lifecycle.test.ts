@@ -65,7 +65,7 @@ async function cleanupE2EData() {
 }
 
 describe("End-to-End Integration Test: Siklus Lengkap Asesmen ASN (PENTA+) — Tahap 13", () => {
-  let app: Elysia;
+  let app: any;
   let adminToken: string;
   let createdUserId: number;
   let createdQuestionId: number;
