@@ -210,3 +210,6 @@ export const questionsRoute = new Elysia()
         }
       )
   );
+
+export type QuestionsRoute = typeof questionsRoute;
+export default questionsRoute;
