@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 import { Elysia } from "elysia";
 import { authRoute } from "../../../src/modules/auth/auth.route";
 import { authPlugin } from "../../../src/modules/auth/auth.guard";
-import { questionsRoute } from "../../../src/modules/questions/questions.route";
+import { questionsRoute } from "../../../src/modules/questions/questions.route.ts";
 import { seedDatabase } from "../../../src/db/seed";
 import { db } from "../../../src/db/connection";
 import { questions, questionOptions } from "../../../src/db/schema";
