@@ -16,8 +16,8 @@
 | **5** | Modul Competency (9 Dimensi) | ✅ Selesai | — | Endpoint referensi 9 dimensi PermenPANRB 38/2017 (8 Manajerial + 1 Sosio Kultural), filter kategori, detail dimensi, dan pembaruan bobot standar & deskripsi oleh Admin. |
 | **6** | Modul Questions (Bank Soal SJT) | ✅ Selesai | — | CRUD bank soal SJT lengkap via Drizzle ORM, validasi ketat 4 opsi berbobot unik 1 s.d. 4, filter competency/target level, pencarian kasus, dan cascade delete opsi. |
 | **7** | Modul Sessions (Sesi & Penjadwalan) | ✅ Selesai | — | Manajemen jadwal sesi berbatas waktu, token akses unik per peserta (`ASN-XXXXXX`), pencegahan duplikasi, endpoint verifikasi token peserta, dan siklus status `DRAFT` → `BERJALAN` → `SELESAI`. |
-| **8** | Modul Exams (Core Engine & Proctoring) | ⏳ Siap Dikerjakan | — | Acak soal & opsi, timer tersinkron server, autosave per klik, deteksi tab switch. |
-| **9** | Modul Reports (Kalkulasi JPM & Radar) | ⏳ Menunggu | — | Kalkulasi nilai per dimensi, persentase JPM, kategori kelulusan (MS/MMS/KMS). |
+| **8** | Modul Exams (Core Engine & Proctoring) | ✅ Selesai | — | Engine pelaksanaan ujian SJT, pengacakan deterministik butir & opsi jawaban, penyembunyian bobot nilai dari klien, autosave real-time per klik, pencatatan pelanggaran tab-switch proctoring, dan penguncian lembar submit. |
+| **9** | Modul Reports (Kalkulasi JPM & Radar) | ⏳ Siap Dikerjakan | — | Kalkulasi nilai per dimensi, persentase JPM, kategori kelulusan (MS/MMS/KMS). |
 | **10** | Frontend Setup & Design System | ⏳ Menunggu | — | Inisialisasi SvelteKit, Vanilla CSS Design System bertema Portal Pemerintahan. |
 | **11** | Frontend Admin | ⏳ Menunggu | — | Dashboard, CRUD master data, live monitoring proctoring ujian peserta. |
 | **12** | Frontend Peserta | ⏳ Menunggu | — | Antarmuka ujian SJT terawasi, navigasi soal, timer, dan visualisasi Radar Chart. |
@@ -95,6 +95,14 @@ Database MySQL `ases_men` telah memiliki 7 tabel fisik:
 - `SessionsService.verifyToken(userId, kodeSesi, tokenAkses)`: Memvalidasi hak akses peserta terhadap sesi yang berstatus `BERJALAN` sebagai gerbang masuk ujian.
 - `SessionsService.getMySessions(userId)`: Mengambil daftar jadwal ujian yang diikuti oleh ASN yang sedang login.
 
+### 8. Modul Exams (Core Engine & Proctoring)
+- `ExamsService.startExam(userId, sessionId, tokenAkses)`: Memvalidasi sesi `BERJALAN` dan mencatat waktu mulai ujian per peserta, menghitung sisa waktu server, serta mengubah status peserta ke `SEDANG_MENGERJAKAN`.
+- `ExamsService.getExamQuestions(userId, participantId)`: Mengambil bank butir soal dengan mengacak urutan butir dan opsi secara deterministik (*seeded shuffle*) per peserta, serta **merahasiakan atribut bobot nilai** (hanya ID, label, dan teks opsi yang dikirim ke klien).
+- `ExamsService.saveAnswer(userId, participantId, data)`: Fitur autosave per klik yang memetakan jawaban peserta langsung ke bobot skor 1–4 di server dan menandai status ragu-ragu.
+- `ExamsService.recordTabSwitch(userId, participantId)`: Engine proctoring yang mencatat dan menambah log pelanggaran perpindahan tab/jendela browser secara *real-time*.
+- `ExamsService.getExamStatus(userId, participantId)`: Sinkronisasi waktu aktif server, menghitung sisa durasi pengerjaan, jumlah terjawab, dan status ragu-ragu.
+- `ExamsService.submitExam(userId, participantId)`: Mengunci lembar jawaban, mengkalkulasi skor perolehan sementara, dan mengubah status peserta ke `SELESAI` (menolak pengiriman jawaban susulan).
+
 ---
 
 ## Status Pengujian Otomatis (TDD Suite)
@@ -109,7 +117,8 @@ tests/modules/users/users.test.ts 13 pass (49 expect calls)
 tests/modules/competency/competency.test.ts 10 pass (32 expect calls)
 tests/modules/questions/questions.test.ts 14 pass (44 expect calls)
 tests/modules/sessions/sessions.test.ts 16 pass (53 expect calls)
+tests/modules/exams/exams.test.ts 10 pass (384 expect calls)
 ---------------------------------------------------------
-Total                            75 pass, 0 fail (351 assertions)
+Total                            85 pass, 0 fail (735 assertions)
 TypeScript Compilation           0 errors (Exit code 0)
 ```
