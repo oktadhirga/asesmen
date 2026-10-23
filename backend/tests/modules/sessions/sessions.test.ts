@@ -1,16 +1,16 @@
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 import { Elysia } from "elysia";
-import { authRoute } from "../../../src/modules/auth/auth.route.ts";
-import { authPlugin } from "../../../src/modules/auth/auth.guard.ts";
-import { sessionsRoute } from "../../../src/modules/sessions/sessions.route.ts";
-import { seedDatabase } from "../../../src/db/seed.ts";
-import { db } from "../../../src/db/connection.ts";
+import { authRoute } from "../../../src/modules/auth/auth.route";
+import { authPlugin } from "../../../src/modules/auth/auth.guard";
+import { sessionsRoute } from "../../../src/modules/sessions/sessions.route";
+import { seedDatabase } from "../../../src/db/seed";
+import { db } from "../../../src/db/connection";
 import {
   assessmentSessions,
   sessionParticipants,
   participantAnswers,
   users,
-} from "../../../src/db/schema.ts";
+} from "../../../src/db/schema";
 import { eq, inArray } from "drizzle-orm";
 
 const TEST_KODE_SESI = ["SESI-TEST-001", "SESI-TEST-002", "SESI-TEST-003"];

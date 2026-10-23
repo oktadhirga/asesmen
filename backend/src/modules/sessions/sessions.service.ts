@@ -1,12 +1,12 @@
-import { db } from "../../db/connection.ts";
+import { db } from "../../db/connection";
 import {
   assessmentSessions,
   sessionParticipants,
   participantAnswers,
   users,
-} from "../../db/schema.ts";
+} from "../../db/schema";
 import { eq, and, or, like, sql, inArray, SQL } from "drizzle-orm";
-import { sanitizeUser } from "../auth/auth.service.ts";
+import { sanitizeUser } from "../auth/auth.service";
 
 export interface CreateSessionData {
   judul: string;
