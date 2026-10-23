@@ -21,8 +21,8 @@
 | **8** | Modul Exams (Core Engine & Proctoring) | ✅ Selesai | — | Engine pelaksanaan ujian SJT, pengacakan deterministik butir & opsi jawaban, penyembunyian bobot nilai dari klien, autosave real-time per klik, pencatatan pelanggaran tab-switch proctoring, dan penguncian lembar submit. |
 | **9** | Modul Reports (Kalkulasi JPM & Radar) | ✅ Selesai | — | Kalkulasi skor 9 dimensi, gap analisis, persentase JPM, visualisasi radar chart dataset, kategori kelulusan (MS/MMS/KMS), rekap sesi, dan rekalkulasi otomatis. |
 | **10** | Frontend Setup & Design System | ✅ Selesai | — | SvelteKit (Svelte 5 runes) + Vanilla CSS Design Tokens bertema Portal Pemerintahan (Indonesian Royal Navy & Heritage Gold), A11y WCAG 2.1 AA, pure SVG Radar Chart 9 Dimensi, Auth Store, API Client, dan komponen UI modular lengkap. |
-| **11** | Frontend Admin | ⏳ Siap Dikerjakan | — | Dashboard, CRUD master data, live monitoring proctoring ujian peserta. |
-| **12** | Frontend Peserta | ⏳ Menunggu | — | Antarmuka ujian SJT terawasi, navigasi soal, timer, dan visualisasi Radar Chart. |
+| **11** | Frontend Admin | ✅ Selesai | — | Dashboard statistik, CRUD master data (pegawai & bank soal SJT), manajemen sesi & siklus, Live Proctoring tab-switch monitor, dan rekapitulasi JPM radar chart. |
+| **12** | Frontend Peserta | ⏳ Siap Dikerjakan | — | Antarmuka ujian SJT terawasi, navigasi soal, timer, dan visualisasi Radar Chart. |
 | **13** | Integration Test End-to-End | ⏳ Menunggu | — | Pengujian siklus penuh asesmen dari login, pengerjaan, hingga rekapitulasi. |
 
 ---
@@ -147,6 +147,32 @@ Database MySQL `ases_men` telah memiliki 7 tabel fisik:
 - **Halaman Aktif**:
   - `+page.svelte`: Landing page interaktif & showcase live design system tokens.
   - `login/+page.svelte`: Formulir autentikasi resmi dengan validasi, proteksi error, dan tombol akses cepat 1-klik untuk 4 akun demo ASN.
+
+### 11. Frontend Admin (Pusat Manajemen Asesmen & Live Proctoring)
+- **Role Guard & Sub-Navigasi** ([admin/+layout.svelte](file:///d:/Development/assessment/frontend/src/routes/admin/+layout.svelte)):
+  - Proteksi rute khusus pengguna ber-role `ADMIN`, redirect otomatis ke `/login` bila tidak memiliki wewenang.
+  - Sub-navigasi terintegrasi: Dashboard, Sesi & Proctoring, Bank Soal SJT, Pegawai ASN, dan Rekapitulasi JPM.
+- **Admin Dashboard** ([admin/dashboard/+page.svelte](file:///d:/Development/assessment/frontend/src/routes/admin/dashboard/+page.svelte)):
+  - Statistik live: Total Pegawai Terdaftar, Sesi Berjalan, Bank Soal SJT, Total Jadwal Sesi.
+  - Tabel pemantauan ringkas sesi aktif dan tombol aksi cepat (*Quick Actions*).
+- **Manajemen Sesi & Siklus Ujian** ([admin/sessions/+page.svelte](file:///d:/Development/assessment/frontend/src/routes/admin/sessions/+page.svelte)):
+  - CRUD sesi asesmen berbatas waktu, form modal buat sesi (kode unik, durasi, rentang waktu).
+  - Kontrol siklus instan (`DRAFT` → `BERJALAN` → `SELESAI`).
+- **Live Proctoring Monitoring** ([admin/sessions/[id]/+page.svelte](file:///d:/Development/assessment/frontend/src/routes/admin/sessions/%5Bid%5D/+page.svelte)):
+  - Polling sinkronisasi status ujian setiap 5 detik saat sesi `BERJALAN`.
+  - Pendaftaran peserta baru via modal pencarian pegawai ASN (mencegah duplikasi).
+  - Indikator pelanggaran integritas (*tab switch violation counter*) dengan highlight visual dan kode token akses unik peserta.
+- **Bank Soal SJT PermenPANRB** ([admin/questions/+page.svelte](file:///d:/Development/assessment/frontend/src/routes/admin/questions/+page.svelte)):
+  - Filter 9 dimensi kompetensi & target level jabatan (1-4).
+  - Modal pembuatan soal studi kasus dengan validasi ketat 4 opsi berbobot {1, 2, 3, 4} dan penandaan opsi bernilai optimal.
+- **Master Data Pegawai ASN** ([admin/users/+page.svelte](file:///d:/Development/assessment/frontend/src/routes/admin/users/+page.svelte)):
+  - Pencarian NIP / nama, filter jenjang (Pelaksana, Pengawas, Administrator, JPT) dan role.
+  - Form modal tambah pegawai baru dengan password hash aman.
+- **Rekapitulasi JPM & Radar Chart Modal** ([admin/reports/+page.svelte](file:///d:/Development/assessment/frontend/src/routes/admin/reports/+page.svelte)):
+  - Agregasi statistik sesi: rata-rata nilai, nilai tertinggi/terendah, dan sebaran persentase kelulusan (MS, MMS, KMS).
+  - Leaderboard pemeringkatan nilai peserta.
+  - Modal interaktif Radar Chart 9 dimensi individu peserta lengkap dengan tabel rincian gap capaian riil vs standar.
+  - Fitur rekalkulasi nilai otomatis dari database per peserta.
 
 ---
 
