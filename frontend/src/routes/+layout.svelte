@@ -13,7 +13,8 @@
 </script>
 
 <svelte:head>
-  <title>Portal Asesmen Kompetensi ASN — PermenPANRB No. 38 Tahun 2017</title>
+  <title>PENTA+ | Penilaian Kompetensi & Potensi ASN — Pemkab Trenggalek</title>
+  <link rel="icon" type="image/svg+xml" href="/logo-trenggalek.svg" />
 </svelte:head>
 
 <div class="app-layout">
@@ -26,13 +27,13 @@
   <footer class="app-footer">
     <div class="container footer-content">
       <div class="footer-left">
-        <span class="footer-title">Sistem Asesmen Kompetensi Aparatur Sipil Negara</span>
+        <span class="footer-title">PENTA+ · Penilaian Kompetensi dan Potensi ASN</span>
         <span class="footer-desc">
-          Berdasarkan Peraturan Menteri PANRB No. 38 Tahun 2017 tentang Standar Kompetensi Jabatan ASN.
+          Pemerintah Kabupaten Trenggalek · Standar PermenPANRB No. 38 Tahun 2017 tentang Standar Kompetensi Jabatan ASN.
         </span>
       </div>
       <div class="footer-right">
-        <span class="footer-copy">&copy; 2026 Badan Kepegawaian Negara / Instansi Pemerintah. Hak Cipta Dilindungi.</span>
+        <span class="footer-copy">&copy; 2026 Pemerintah Kabupaten Trenggalek. Hak Cipta Dilindungi.</span>
       </div>
     </div>
   </footer>

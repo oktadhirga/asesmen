@@ -39,30 +39,27 @@
 </script>
 
 <svelte:head>
-  <title>Masuk — Portal Asesmen Kompetensi ASN</title>
+  <title>Masuk — PENTA+ Kabupaten Trenggalek</title>
 </svelte:head>
 
 <div class="login-page container-narrow">
   <Card class="login-card">
     {#snippet header()}
       <div class="login-header">
-        <div class="emblem-wrapper" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" class="emblem-svg">
-            <path
-              d="M12 2L3 7V12C3 17.5 7 21.5 12 22C17 21.5 21 17.5 21 12V7L12 2Z"
-              fill="#0a2540"
-              stroke="#c99738"
-              stroke-width="1.5"
-            />
-            <path
-              d="M12 6L14 10H18L15 13L16 17L12 14.5L8 17L9 13L6 10H10L12 6Z"
-              fill="#c99738"
-            />
-          </svg>
+        <div class="emblem-wrapper">
+          <img
+            src="/logo-trenggalek.svg"
+            alt="Lambang Daerah Kabupaten Trenggalek"
+            class="login-logo-img"
+          />
         </div>
+        <div class="login-brand-title">
+          PENTA<span class="brand-plus">+</span>
+        </div>
+        <span class="login-gov-badge">PEMERINTAH KABUPATEN TRENGGALEK</span>
         <h2 class="title">Masuk ke Portal Asesmen</h2>
         <p class="subtitle">
-          Silakan masukkan Nomor Induk Pegawai (NIP) dan kata sandi akun resmi Anda
+          Sistem Penilaian Kompetensi dan Potensi ASN (PermenPANRB No. 38 Tahun 2017)
         </p>
       </div>
     {/snippet}
@@ -160,24 +157,54 @@
   }
 
   .emblem-wrapper {
-    width: 52px;
-    height: 52px;
+    width: 60px;
+    height: 75px;
+    margin-bottom: var(--space-2);
+  }
+
+  .login-logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+  }
+
+  .login-brand-title {
+    font-size: 1.85rem;
+    font-weight: 800;
+    color: var(--color-brand-primary);
+    letter-spacing: 0.04em;
+    line-height: 1.1;
+  }
+
+  .brand-plus {
+    color: var(--color-gold);
+    font-size: 2rem;
+    font-weight: 900;
+  }
+
+  .login-gov-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--color-brand-secondary);
+    background-color: var(--color-bg-subtle);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    padding: 2px 8px;
+    margin-top: 4px;
     margin-bottom: var(--space-3);
   }
 
-  .emblem-svg {
-    width: 100%;
-    height: 100%;
-  }
-
   .title {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
     color: var(--color-brand-primary);
     margin-bottom: var(--space-1);
+    font-weight: var(--font-weight-bold);
   }
 
   .subtitle {
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
     color: var(--color-text-subtle);
     max-width: 440px;
   }

@@ -1,5 +1,7 @@
-# Progress Perkembangan Aplikasi Asesmen ASN (SJT PermenPANRB)
+# Progress Perkembangan Aplikasi PENTA+ (Penilaian Kompetensi dan Potensi ASN)
 
+> **Instansi**: Pemerintah Kabupaten Trenggalek (BKPSDM)  
+> **Dasar Hukum**: PermenPANRB No. 38 Tahun 2017 tentang Standar Kompetensi Jabatan ASN  
 > **Stack Teknologi**: Bun v1.4.0 · ElysiaJS · Drizzle ORM · MySQL (`ases_men`) · SvelteKit (Svelte 5)  
 > **Pendekatan Pengembangan**: Test-Driven Development (TDD Red → Green), Conventional Commits, GitHub Issues Tracking
 

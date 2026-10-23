@@ -15,24 +15,20 @@
 
   <div class="navbar container">
     <!-- Brand / Logo -->
-    <a href="/" class="brand-link" aria-label="Beranda Portal Asesmen ASN">
-      <div class="brand-emblem" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" class="emblem-svg">
-          <path
-            d="M12 2L3 7V12C3 17.5 7 21.5 12 22C17 21.5 21 17.5 21 12V7L12 2Z"
-            fill="#0a2540"
-            stroke="#c99738"
-            stroke-width="1.5"
-          />
-          <path
-            d="M12 6L14 10H18L15 13L16 17L12 14.5L8 17L9 13L6 10H10L12 6Z"
-            fill="#c99738"
-          />
-        </svg>
+    <a href="/" class="brand-link" aria-label="Beranda Portal PENTA+ Kabupaten Trenggalek">
+      <div class="brand-emblem">
+        <img
+          src="/logo-trenggalek.svg"
+          alt="Lambang Daerah Kabupaten Trenggalek"
+          class="emblem-img"
+        />
       </div>
       <div class="brand-info">
-        <span class="brand-title">ASESMEN KOMPETENSI ASN</span>
-        <span class="brand-subtitle">Standar PermenPANRB No. 38 Tahun 2017</span>
+        <div class="brand-title-wrap">
+          <span class="brand-title">PENTA</span><span class="brand-plus">+</span>
+          <span class="brand-badge">TRENGGALEK</span>
+        </div>
+        <span class="brand-subtitle">Penilaian Kompetensi dan Potensi ASN</span>
       </div>
     </a>
 
@@ -116,9 +112,11 @@
     justify-content: center;
   }
 
-  .emblem-svg {
-    width: 100%;
-    height: 100%;
+  .emblem-img {
+    width: 38px;
+    height: 48px;
+    object-fit: contain;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.12));
   }
 
   .brand-info {
@@ -126,16 +124,41 @@
     flex-direction: column;
   }
 
+  .brand-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    line-height: 1.1;
+  }
+
   .brand-title {
-    font-size: var(--font-size-base);
-    font-weight: var(--font-weight-bold);
+    font-size: 1.25rem;
+    font-weight: 800;
     color: var(--color-brand-primary);
-    letter-spacing: -0.01em;
-    line-height: 1.2;
+    letter-spacing: 0.04em;
+  }
+
+  .brand-plus {
+    font-size: 1.35rem;
+    font-weight: 900;
+    color: var(--color-gold);
+    line-height: 1;
+  }
+
+  .brand-badge {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    background-color: var(--color-bg-subtle);
+    color: var(--color-brand-secondary);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    padding: 1px 5px;
+    margin-left: 2px;
   }
 
   .brand-subtitle {
-    font-size: var(--font-size-xs);
+    font-size: 11px;
     color: var(--color-text-subtle);
     font-weight: var(--font-weight-medium);
   }

@@ -39,23 +39,31 @@
 <div class="landing-page container">
   <!-- Hero Section -->
   <section class="hero-section glass-panel">
-    <div class="hero-badge-wrap">
-      <Badge variant="gold" size="md">
-        Portal Resmi Pemerintah Republik Indonesia
-      </Badge>
+    <div class="hero-brand-top">
+      <img
+        src="/logo-trenggalek.svg"
+        alt="Logo Pemerintah Kabupaten Trenggalek"
+        class="hero-logo-img"
+      />
+      <div class="hero-badge-wrap">
+        <Badge variant="gold" size="md">
+          PEMERINTAH KABUPATEN TRENGGALEK
+        </Badge>
+      </div>
     </div>
 
     <h1 class="hero-title">
-      Sistem Asesmen Kompetensi Aparatur Sipil Negara
+      PENTA<span class="hero-plus">+</span>
+      <span class="hero-tagline">Penilaian Kompetensi dan Potensi ASN</span>
     </h1>
 
     <p class="hero-subtitle">
-      Platform asesmen berbasis <strong>Situational Judgment Test (SJT)</strong> terstandarisasi PermenPANRB No. 38 Tahun 2017 untuk pemetaan profil kompetensi 8 Manajerial dan 1 Sosio Kultural pegawai ASN.
+      Platform asesmen berbasis <strong>Situational Judgment Test (SJT)</strong> terstandarisasi PermenPANRB No. 38 Tahun 2017 untuk pemetaan profil 8 dimensi Manajerial dan 1 Sosio Kultural Aparatur Sipil Negara di lingkungan <strong>Pemerintah Kabupaten Trenggalek</strong>.
     </p>
 
     <div class="hero-cta-group">
       <Button variant="gold" size="lg" onclick={() => (window.location.href = "/login")}>
-        Masuk ke Portal Asesmen
+        Masuk ke Portal PENTA+
       </Button>
       <Button variant="outline" size="lg" onclick={() => (isDemoModalOpen = true)}>
         Buka Dialog Spesifikasi Komponen
@@ -252,16 +260,50 @@
     box-shadow: var(--shadow-md);
   }
 
-  .hero-badge-wrap {
+  .hero-brand-top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
     margin-bottom: var(--space-4);
   }
 
+  .hero-logo-img {
+    width: 64px;
+    height: 82px;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.12));
+  }
+
+  .hero-badge-wrap {
+    margin-bottom: var(--space-2);
+  }
+
   .hero-title {
-    font-size: var(--font-size-3xl);
+    font-size: 2.75rem;
+    font-weight: 800;
     max-width: 820px;
     margin: 0 auto var(--space-4);
     letter-spacing: -0.02em;
     color: var(--color-brand-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .hero-plus {
+    color: var(--color-gold);
+    font-size: 3rem;
+    font-weight: 900;
+    margin-left: 2px;
+  }
+
+  .hero-tagline {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-brand-secondary);
+    letter-spacing: normal;
   }
 
   .hero-subtitle {
