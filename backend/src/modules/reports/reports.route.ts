@@ -101,6 +101,3 @@ export const reportsRoute = new Elysia()
         }
       )
   );
-
-export type ReportsRoute = typeof reportsRoute;
-export default reportsRoute;
