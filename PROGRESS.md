@@ -14,8 +14,8 @@
 | **3** | Modul Auth & Role Guard Middleware | ✅ Selesai | [#1](https://github.com/oktadhirga/asesmen/issues/1) | POST `/api/auth/login` (NIP + password), JWT signing/verifikasi, GET `/api/auth/me`, guard `requireAuth`, `requireAdmin` (403), dan `requirePeserta`. |
 | **4** | Modul Users (CRUD ASN & Asesor) | ✅ Selesai | — | CRUD master user lengkap via Drizzle ORM, paginasi, pencarian nama/NIP, filter jenjang/role, proteksi NIP unik, auto-hash password Bcrypt, dan proteksi self-deletion akun Admin. |
 | **5** | Modul Competency (9 Dimensi) | ✅ Selesai | — | Endpoint referensi 9 dimensi PermenPANRB 38/2017 (8 Manajerial + 1 Sosio Kultural), filter kategori, detail dimensi, dan pembaruan bobot standar & deskripsi oleh Admin. |
-| **6** | Modul Questions (Bank Soal SJT) | ⏳ Siap Dikerjakan | — | CRUD bank soal dengan validasi ketat 4 opsi berbobot 1-4. |
-| **7** | Modul Sessions (Sesi & Penjadwalan) | ⏳ Menunggu | — | Manajemen sesi, token akses unik peserta, status DRAFT/BERJALAN/SELESAI. |
+| **6** | Modul Questions (Bank Soal SJT) | ✅ Selesai | — | CRUD bank soal SJT lengkap via Drizzle ORM, validasi ketat 4 opsi berbobot unik 1 s.d. 4, filter competency/target level, pencarian kasus, dan cascade delete opsi. |
+| **7** | Modul Sessions (Sesi & Penjadwalan) | ⏳ Siap Dikerjakan | — | Manajemen sesi, token akses unik peserta, status DRAFT/BERJALAN/SELESAI. |
 | **8** | Modul Exams (Core Engine & Proctoring) | ⏳ Menunggu | — | Acak soal & opsi, timer tersinkron server, autosave per klik, deteksi tab switch. |
 | **9** | Modul Reports (Kalkulasi JPM & Radar) | ⏳ Menunggu | — | Kalkulasi nilai per dimensi, persentase JPM, kategori kelulusan (MS/MMS/KMS). |
 | **10** | Frontend Setup & Design System | ⏳ Menunggu | — | Inisialisasi SvelteKit, Vanilla CSS Design System bertema Portal Pemerintahan. |
@@ -77,6 +77,14 @@ Database MySQL `ases_men` telah memiliki 7 tabel fisik:
 - `CompetencyService.updateCompetency(id, data)`: Mengizinkan pembaruan nama, deskripsi, dan `bobot_standar` oleh Asesor/Admin.
 - `competencyRoute`: Endpoint baca (`GET`) dilindungi `requireAuth` (dapat diakses Admin dan Peserta), sedangkan mutasi (`PUT`) dilindungi `requireAdmin` (403 Forbidden bagi Peserta).
 
+### 6. Modul Questions (Bank Soal SJT)
+- `QuestionsService.listQuestions(params)`: Mengambil daftar soal dengan join dimensi kompetensi, 4 opsi pilihan, filter `competency_id`, `target_level`, dan pencarian teks `search`.
+- `QuestionsService.getQuestionById(id)`: Mengambil detail satu butir soal SJT beserta 4 opsi jawaban.
+- `QuestionsService.createQuestion(data)`: Validasi ketat aturan SJT PermenPANRB (wajib tepat 4 opsi dengan kombinasi bobot unik {1, 2, 3, 4}), membuat soal dan seluruh opsi secara relasional.
+- `QuestionsService.updateQuestion(id, data)`: Pembaruan skenario kasus, target level jabatan, atau opsi pilihan jawaban.
+- `QuestionsService.deleteQuestion(id)`: Penghapusan soal disertai pembersihan (*cascade delete*) opsi jawaban terkait.
+- `questionsRoute`: Seluruh endpoint bank soal diproteksi khusus Administrator/Asesor (`requireAdmin`).
+
 ---
 
 ## Status Pengujian Otomatis (TDD Suite)
@@ -89,7 +97,8 @@ tests/db/seed.test.ts            5 pass (88 expect calls)
 tests/modules/auth/auth.test.ts  9 pass (27 expect calls)
 tests/modules/users/users.test.ts 13 pass (49 expect calls)
 tests/modules/competency/competency.test.ts 10 pass (32 expect calls)
+tests/modules/questions/questions.test.ts 14 pass (44 expect calls)
 ---------------------------------------------------------
-Total                            45 pass, 0 fail (254 assertions)
+Total                            59 pass, 0 fail (298 assertions)
 TypeScript Compilation           0 errors (Exit code 0)
 ```

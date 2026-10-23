@@ -4,6 +4,7 @@ import { authPlugin } from "./modules/auth/auth.guard";
 import { authRoute } from "./modules/auth/auth.route";
 import { usersRoute } from "./modules/users/users.route";
 import { competencyRoute } from "./modules/competency/competency.route";
+import { questionsRoute } from "./modules/questions/questions.route";
 
 const port = Number(process.env.PORT) || 3000;
 const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
@@ -24,7 +25,11 @@ export const app = new Elysia()
     service: "Asesmen ASN Backend (SJT PermenPANRB)",
   }))
   .group("/api", (api) =>
-    api.use(authRoute).use(usersRoute).use(competencyRoute)
+    api
+      .use(authRoute)
+      .use(usersRoute)
+      .use(competencyRoute)
+      .use(questionsRoute)
   )
   .listen(port);
 
