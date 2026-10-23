@@ -32,7 +32,7 @@ export const authPlugin = new Elysia({ name: "auth-guard" })
     return { user: payload };
   });
 
-export function requireAuth({ user, set }: { user: any; set: any }) {
+export function requireAuth({ user, set }: { user?: any; set: any }) {
   if (!user) {
     set.status = 401;
     return {
@@ -42,7 +42,7 @@ export function requireAuth({ user, set }: { user: any; set: any }) {
   }
 }
 
-export function requireAdmin({ user, set }: { user: any; set: any }) {
+export function requireAdmin({ user, set }: { user?: any; set: any }) {
   if (!user) {
     set.status = 401;
     return {
@@ -60,7 +60,7 @@ export function requireAdmin({ user, set }: { user: any; set: any }) {
   }
 }
 
-export function requirePeserta({ user, set }: { user: any; set: any }) {
+export function requirePeserta({ user, set }: { user?: any; set: any }) {
   if (!user) {
     set.status = 401;
     return {
