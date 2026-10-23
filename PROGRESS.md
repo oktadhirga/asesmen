@@ -12,8 +12,8 @@
 | **1** | Project Scaffolding & DB Schema | ✅ Selesai | — | Inisialisasi Bun workspace, konfigurasi Drizzle ORM MySQL, 7 skema tabel relasional, koneksi pool aktif ke DB `ases_men`, migrasi SQL berhasil digenerate & push. |
 | **2** | Seeder: 9 Kompetensi, Soal SJT & Akun Demo | ✅ Selesai | — | 9 dimensi kompetensi PermenPANRB 38/2017, 18 soal SJT kasus nyata (4 opsi berbobot 1-4), 4 akun demo (1 Admin, 3 ASN) ber-hash Bcrypt, lolos uji idempotency. |
 | **3** | Modul Auth & Role Guard Middleware | ✅ Selesai | [#1](https://github.com/oktadhirga/asesmen/issues/1) | POST `/api/auth/login` (NIP + password), JWT signing/verifikasi, GET `/api/auth/me`, guard `requireAuth`, `requireAdmin` (403), dan `requirePeserta`. |
-| **4** | Modul Users (CRUD ASN & Asesor) | ⏳ Siap Dikerjakan | — | Manajemen data pegawai oleh Admin (Paginasi, filter jenjang/role, proteksi NIP). |
-| **5** | Modul Competency (9 Dimensi) | ⏳ Menunggu | — | Endpoint referensi 9 dimensi dan pembaruan bobot standar. |
+| **4** | Modul Users (CRUD ASN & Asesor) | ✅ Selesai | — | CRUD master user lengkap via Drizzle ORM, paginasi, pencarian nama/NIP, filter jenjang/role, proteksi NIP unik, auto-hash password Bcrypt, dan proteksi self-deletion akun Admin. |
+| **5** | Modul Competency (9 Dimensi) | ⏳ Siap Dikerjakan | — | Endpoint referensi 9 dimensi dan pembaruan bobot standar. |
 | **6** | Modul Questions (Bank Soal SJT) | ⏳ Menunggu | — | CRUD bank soal dengan validasi ketat 4 opsi berbobot 1-4. |
 | **7** | Modul Sessions (Sesi & Penjadwalan) | ⏳ Menunggu | — | Manajemen sesi, token akses unik peserta, status DRAFT/BERJALAN/SELESAI. |
 | **8** | Modul Exams (Core Engine & Proctoring) | ⏳ Menunggu | — | Acak soal & opsi, timer tersinkron server, autosave per klik, deteksi tab switch. |
@@ -63,6 +63,14 @@ Database MySQL `ases_men` telah memiliki 7 tabel fisik:
 - `requireAdmin`: Mengisolasi route khusus admin (`403 Forbidden` untuk role non-admin).
 - `requirePeserta`: Proteksi route khusus peserta asesmen.
 
+### 4. Modul Users (CRUD ASN & Asesor)
+- `UsersService.listUsers(params)`: Mendukung paginasi (`page`, `limit`), pencarian teks pada nama atau NIP, dan filter `role` serta `jenjang_jabatan`.
+- `UsersService.getUserById(id)`: Mengambil detail satu pegawai (tanpa `password_hash`).
+- `UsersService.createUser(data)`: Validasi keunikan NIP (mencegah duplikasi), auto-hash password Bcrypt, dan default role/jenjang.
+- `UsersService.updateUser(id, data)`: Pembaruan fleksibel profil pegawai, jabatan, unit kerja, role, atau re-hashing password baru jika diubah.
+- `UsersService.deleteUser(id)`: Penghapusan akun dengan proteksi anti self-deletion bagi Administrator yang sedang login.
+- `usersRoute`: Seluruh endpoint diisolasi di bawah middleware `requireAdmin` (403 Forbidden bagi Peserta).
+
 ---
 
 ## Status Pengujian Otomatis (TDD Suite)
@@ -73,7 +81,8 @@ Semua pengujian berjalan menggunakan runner `bun test` dengan status **100% GREE
 tests/db/schema.test.ts          8 pass (58 expect calls)
 tests/db/seed.test.ts            5 pass (88 expect calls)
 tests/modules/auth/auth.test.ts  9 pass (27 expect calls)
+tests/modules/users/users.test.ts 13 pass (49 expect calls)
 ---------------------------------------------------------
-Total                            22 pass, 0 fail (173 assertions)
+Total                            35 pass, 0 fail (222 assertions)
 TypeScript Compilation           0 errors (Exit code 0)
 ```
