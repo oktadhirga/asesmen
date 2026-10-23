@@ -145,6 +145,8 @@ export interface ApiResponse<T = any> {
   success: boolean;
   message?: string;
   data?: T;
+  token?: string;
+  user?: any;
   pagination?: {
     page: number;
     limit: number;

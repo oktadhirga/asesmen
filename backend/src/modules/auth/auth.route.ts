@@ -27,6 +27,10 @@ export const authRoute = new Elysia()
               message: "Login berhasil",
               token,
               user,
+              data: {
+                token,
+                user,
+              },
             };
           } catch (error: any) {
             set.status = 401;
@@ -66,6 +70,9 @@ export const authRoute = new Elysia()
           return {
             success: true,
             user: profile,
+            data: {
+              user: profile,
+            },
           };
         },
         {

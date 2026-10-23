@@ -45,34 +45,4 @@ Pengukuran kompetensi mengacu secara langsung pada standar nasional PermenPANRB 
 
 ---
 
-## 💻 Panduan Menjalankan Aplikasi
-
-Aplikasi dapat dijalankan secara bersamaan (Backend & Frontend) dengan satu perintah:
-
-```bash
-# 1. Pastikan dependensi telah terpasang
-bun install
-
-# 2. Jalankan server aplikasi
-bun run dev
-```
-
-Akses portal melalui browser:
-- **Portal PENTA+**: [http://localhost:5173](http://localhost:5173)
-
----
-
-## 👤 Akun Demo Uji Coba
-
-Untuk keperluan demonstrasi dan pengujian, akun berikut telah tersedia di sistem (Password default: `password123`):
-
-| Role / Sasaran | NIP | Nama Pegawai |
-| :--- | :--- | :--- |
-| **Administrator / Asesor** | `198501012010011001` | Dr. H. Bambang Soeprapto, M.Si |
-| **Peserta (Pelaksana)** | `199505122020121002` | Ahmad Fauzi, S.Kom |
-| **Peserta (Pengawas / Eselon IV)** | `198808172014032003` | Siti Rahmawati, S.E., M.M. |
-| **Peserta (Administrator / Eselon III)** | `197903252005011004` | Ir. Dedi Kusuma, M.Eng |
-
----
-
 &copy; 2026 Pemerintah Kabupaten Trenggalek. Hak Cipta Dilindungi.

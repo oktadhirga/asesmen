@@ -39,14 +39,15 @@ class AuthState {
     this.isLoading = true;
 
     try {
-      const res = await ApiClient.get<{ user: User }>("/auth/me");
-      if (res.success && res.data?.user) {
-        this.user = res.data.user;
+      const res = await ApiClient.get<any>("/auth/me");
+      const user = res.data?.user || res.user;
+      if (res.success && user) {
+        this.user = user;
       } else {
-        this.logout();
+        this.clearAuth();
       }
-    } catch (err: any) {
-      this.logout();
+    } catch {
+      this.clearAuth();
     } finally {
       this.isLoading = false;
     }
@@ -57,15 +58,18 @@ class AuthState {
     this.error = null;
 
     try {
-      const res = await ApiClient.post<{ token: string; user: User }>("/auth/login", {
+      const res = await ApiClient.post<any>("/auth/login", {
         nip,
         password,
       });
 
-      if (res.success && res.data) {
-        this.token = res.data.token;
-        this.user = res.data.user;
-        ApiClient.setToken(res.data.token);
+      const token = res.data?.token || res.token;
+      const user = res.data?.user || res.user;
+
+      if (res.success && token && user) {
+        this.token = token;
+        this.user = user;
+        ApiClient.setToken(token);
         return true;
       } else {
         this.error = res.message || "Kombinasi NIP dan password tidak sesuai.";
@@ -79,11 +83,15 @@ class AuthState {
     }
   }
 
-  logout() {
+  clearAuth() {
     this.user = null;
     this.token = null;
     this.error = null;
     ApiClient.removeToken();
+  }
+
+  logout() {
+    this.clearAuth();
     if (typeof window !== "undefined") {
       window.location.href = "/login";
     }
