@@ -7,6 +7,7 @@ import {
   questionOptions,
 } from "../../db/schema";
 import { eq, and, sql, inArray } from "drizzle-orm";
+import { ReportsService } from "../reports/reports.service";
 
 export interface SaveAnswerData {
   question_id: number;
@@ -456,12 +457,17 @@ export class ExamsService {
       })
       .where(eq(sessionParticipants.id, participantId));
 
+    // Hitung dan simpan nilai JPM serta kategori kelulusan langsung ke database
+    const reportData = await ReportsService.calculateParticipantReport(participantId);
+
     return {
       session_participant_id: participant.id,
       status: "SELESAI",
       waktu_submit: submitTime,
       total_answered: answers.length,
-      total_score: totalScore,
+      total_score: reportData.total_score,
+      jpm_percentage: reportData.jpm_percentage,
+      kategori_kelulusan: reportData.kategori_kelulusan,
     };
   }
 }

@@ -26,7 +26,20 @@
         `/reports/participant/${participantId}`
       );
       if (res.success && res.data) {
-        report = res.data;
+        const raw = res.data as any;
+        const radarItems = raw.radar_chart || raw.radar || [];
+        report = {
+          ...raw,
+          summary: raw.summary || {
+            total_score: raw.total_score || 0,
+            max_possible_score: (radarItems.length || 9) * 4,
+            jpm_percentage: raw.jpm_percentage || 0,
+            kategori_kelulusan: raw.kategori_kelulusan || "KMS",
+            kategori_label: raw.kategori_label || "Belum Dinilai",
+            total_answered: 0,
+          },
+          radar_chart: radarItems,
+        };
       } else {
         errorMessage = res.message || "Gagal memuat dokumen laporan hasil asesmen.";
       }
@@ -54,11 +67,12 @@
   }
 
   // Pengelompokan Dimensi Kekuatan vs Pengembangan
+  const radarList = $derived(report?.radar_chart || (report as any)?.radar || []);
   const strengths = $derived(
-    report?.radar_chart.filter((item: RadarDimensionItem) => item.gap >= 0) || []
+    radarList.filter((item: RadarDimensionItem) => item.gap >= 0)
   );
   const improvements = $derived(
-    report?.radar_chart.filter((item: RadarDimensionItem) => item.gap < 0) || []
+    radarList.filter((item: RadarDimensionItem) => item.gap < 0)
   );
 
   onMount(() => {

@@ -172,6 +172,15 @@ export class ReportsService {
       })
       .where(eq(sessionParticipants.id, participantId));
 
+    const summaryData = {
+      total_score: rawTotalScore,
+      max_possible_score: allCompetencies.length * 4,
+      jpm_percentage: jpmPercentage,
+      kategori_kelulusan: kategoriKelulusan,
+      kategori_label: this.getKategoriLabel(kategoriKelulusan),
+      total_answered: answers.length,
+    };
+
     return {
       participant: {
         id: participantRow.id,
@@ -197,7 +206,9 @@ export class ReportsService {
       jpm_percentage: jpmPercentage,
       kategori_kelulusan: kategoriKelulusan,
       kategori_label: this.getKategoriLabel(kategoriKelulusan),
+      summary: summaryData,
       radar: radarData,
+      radar_chart: radarData,
     };
   }
 
