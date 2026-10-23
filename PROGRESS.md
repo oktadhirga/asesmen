@@ -156,7 +156,11 @@ Database MySQL `ases_men` telah memiliki 7 tabel fisik:
   - Statistik live: Total Pegawai Terdaftar, Sesi Berjalan, Bank Soal SJT, Total Jadwal Sesi.
   - Tabel pemantauan ringkas sesi aktif dan tombol aksi cepat (*Quick Actions*).
 - **Manajemen Sesi & Siklus Ujian** ([admin/sessions/+page.svelte](file:///d:/Development/assessment/frontend/src/routes/admin/sessions/+page.svelte)):
-  - CRUD sesi asesmen berbatas waktu, form modal buat sesi (kode unik, durasi, rentang waktu).
+  - CRUD sesi asesmen berbatas waktu, form modal buat sesi (kode unik, durasi, rentang waktu, target jenjang).
+  - Modal sunting / edit sesi asesmen dengan proteksi siklus hidup:
+    - `DRAFT`: Parameter bebas diedit secara penuh (judul, target jenjang, durasi, rentang jadwal).
+    - `BERJALAN`: Kode sesi dan target jenjang dikunci (read-only) demi mencegah diskualifikasi paket soal peserta yang sedang mengerjakan; waktu mulai dikunci; waktu selesai dapat diperpanjang secara aman.
+    - `SELESAI`: Arsip aman; hanya judul dan deskripsi catatan yang dapat diperbarui.
   - Kontrol siklus instan (`DRAFT` → `BERJALAN` → `SELESAI`).
 - **Live Proctoring Monitoring** ([admin/sessions/[id]/+page.svelte](file:///d:/Development/assessment/frontend/src/routes/admin/sessions/%5Bid%5D/+page.svelte)):
   - Polling sinkronisasi status ujian setiap 5 detik saat sesi `BERJALAN`.
