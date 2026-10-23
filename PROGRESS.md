@@ -22,8 +22,8 @@
 | **9** | Modul Reports (Kalkulasi JPM & Radar) | ✅ Selesai | — | Kalkulasi skor 9 dimensi, gap analisis, persentase JPM, visualisasi radar chart dataset, kategori kelulusan (MS/MMS/KMS), rekap sesi, dan rekalkulasi otomatis. |
 | **10** | Frontend Setup & Design System | ✅ Selesai | — | SvelteKit (Svelte 5 runes) + Vanilla CSS Design Tokens bertema Portal Pemerintahan (Indonesian Royal Navy & Heritage Gold), A11y WCAG 2.1 AA, pure SVG Radar Chart 9 Dimensi, Auth Store, API Client, dan komponen UI modular lengkap. |
 | **11** | Frontend Admin | ✅ Selesai | — | Dashboard statistik, CRUD master data (pegawai & bank soal SJT), manajemen sesi & siklus, Live Proctoring tab-switch monitor, dan rekapitulasi JPM radar chart. |
-| **12** | Frontend Peserta | ⏳ Siap Dikerjakan | — | Antarmuka ujian SJT terawasi, navigasi soal, timer, dan visualisasi Radar Chart. |
-| **13** | Integration Test End-to-End | ⏳ Menunggu | — | Pengujian siklus penuh asesmen dari login, pengerjaan, hingga rekapitulasi. |
+| **12** | Frontend Peserta | ✅ Selesai | — | Portal peserta ujian ASN: dashboard jadwal sesi & input token akses, ruang ujian SJT fokus penuh dengan countdown timer & proctoring tab-switch counter, autosave real-time per respons, palet butir soal, dan laporan resmi JPM + visualisasi Spider Radar Chart 9 dimensi PermenPANRB 38/2017. |
+| **13** | Integration Test End-to-End | ⏳ Siap Dikerjakan | — | Pengujian siklus penuh asesmen dari login, pengerjaan, hingga rekapitulasi. |
 
 ---
 
@@ -173,6 +173,30 @@ Database MySQL `ases_men` telah memiliki 7 tabel fisik:
   - Leaderboard pemeringkatan nilai peserta.
   - Modal interaktif Radar Chart 9 dimensi individu peserta lengkap dengan tabel rincian gap capaian riil vs standar.
   - Fitur rekalkulasi nilai otomatis dari database per peserta.
+
+### 12. Modul Frontend Peserta Asesmen ASN (PENTA+)
+- **Layout & Guard Portal Peserta** ([participant/+layout.svelte](file:///d:/Development/assessment/frontend/src/routes/participant/+layout.svelte)):
+  - Autentikasi guard untuk peserta ASN dengan sub-navbar identitas pegawai (NIP, Nama, Jenjang).
+- **Dashboard Jadwal Asesmen** ([participant/dashboard/+page.svelte](file:///d:/Development/assessment/frontend/src/routes/participant/dashboard/+page.svelte)):
+  - Kartu profil ringkas ASN dan banner tata tertib pengerjaan Situational Judgment Test (SJT).
+  - Daftar penugasan sesi asesmen terintegrasi `GET /api/sessions/my-sessions`.
+  - Modal verifikasi Token Akses unik (`POST /api/exams/start`) untuk memulai ujian berstatus aktif.
+  - Tautan langsung "Lanjutkan Ujian" jika sedang dikerjakan, dan "Lihat Laporan" jika sudah submit.
+- **Ruang Ujian SJT Real-Time Terawasi** ([participant/exam/[id]/+page.svelte](file:///d:/Development/assessment/frontend/src/routes/participant/exam/%5Bid%5D/+page.svelte)):
+  - Header ujian sticky: info sesi, nama ASN, indikator counter pelanggaran proctoring, dan countdown timer format `HH:MM:SS` (peringatan merah pulsasi saat &lt; 10 menit).
+  - Proctoring live anti-kecurangan via `visibilitychange` & `window.blur` terhubung ke `POST /api/exams/:participantId/tab-switch`.
+  - Area Soal SJT: Skenario kasus kerja birokrasi pemerintahan, target level, dan 4 opsi pilihan perilaku (A, B, C, D) dengan bobot nilai tersembunyi total demi validitas psikometri.
+  - Autosave real-time per pemilihan jawaban (`POST /api/exams/:participantId/answers`) dengan notifikasi visual instan.
+  - Checkbox penandaan ragu-ragu (warna kuning) dan tombol navigasi soal.
+  - Palet navigasi butir soal interaktif 1..N dengan status visual (terjawab, ragu-ragu, belum dijawab).
+  - Modal konfirmasi submit akhir dengan rekapitulasi jumlah soal terjawab vs belum vs ragu-ragu, serta penguncian lembar jawaban (`POST /api/exams/:participantId/submit`).
+- **Laporan Individual Hasil Asesmen & Radar Chart** ([participant/reports/[id]/+page.svelte](file:///d:/Development/assessment/frontend/src/routes/participant/reports/%5Bid%5D/+page.svelte)):
+  - Format dokumen resmi standar BKPSDM Pemkab Trenggalek berbasis PermenPANRB No. 38 Tahun 2017.
+  - Banner skor utama Indeks Job Person Match (JPM) % dan kategori rekomendasi (MS / MMS / KMS).
+  - Visualisasi interaktif Spider Radar Chart 9 Dimensi (Pure SVG): perbandingan Standar SKJ vs Capaian Riil ASN.
+  - Tabel rincian 9 dimensi dengan analisis gap (+/-) dan persentase pemenuhan.
+  - Analisis dimensi kekuatan utama (*Strength*) dan prioritas rencana pengembangan (*Need Improvement*).
+  - Tombol cetak / simpan PDF teroptimasi `@media print` lengkap dengan format tanda tangan pengesahan.
 
 ---
 
