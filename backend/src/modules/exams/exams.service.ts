@@ -213,12 +213,13 @@ export class ExamsService {
       optionsMap.get(opt.question_id)!.push(opt);
     }
 
-    // Acak soal dan opsi secara konsisten per peserta (menggunakan participantId sebagai seed)
+    // Acak soal secara konsisten per peserta (menggunakan participantId sebagai seed)
     const shuffledQuestions = this.seededShuffle(allQuestions, participantId);
 
     const questionsWithAnswer = shuffledQuestions.map((q, idx) => {
       const rawOpts = optionsMap.get(q.id) || [];
-      const shuffledOpts = this.seededShuffle(rawOpts, participantId + q.id);
+      // Pilihan opsi A, B, C, D tidak diacak melainkan diurutkan secara konsisten
+      const sortedOpts = [...rawOpts].sort((a, b) => a.label.localeCompare(b.label));
       const userAns = answerMap.get(q.id);
 
       return {
@@ -228,7 +229,7 @@ export class ExamsService {
         kode_soal: q.kode_soal,
         skenario_kasus: q.skenario_kasus,
         target_level: q.target_level,
-        options: shuffledOpts,
+        options: sortedOpts,
         jawaban_peserta: userAns
           ? {
               selected_option_id: userAns.selected_option_id,

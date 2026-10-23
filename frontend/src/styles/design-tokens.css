@@ -6,6 +6,7 @@
 :root {
   /* Brand / Deep Indonesian Royal Navy */
   --color-brand-primary: #0a2540;
+  --color-brand-navy: #0a2540;
   --color-brand-primary-hover: #07192c;
   --color-brand-secondary: #1a365d;
   --color-brand-accent: #2563eb;
@@ -27,6 +28,7 @@
   --color-text-subtle: #64748b;
   --color-text-inverse: #ffffff;
 
+  --color-border: #e2e8f0;
   --color-border-subtle: #f1f5f9;
   --color-border-default: #e2e8f0;
   --color-border-strong: #cbd5e1;

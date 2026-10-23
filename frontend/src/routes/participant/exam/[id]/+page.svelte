@@ -1069,20 +1069,27 @@
   }
 
   .num-btn.active {
-    border-color: var(--color-gold-dark) !important;
-    outline: 2px solid var(--color-gold-dark);
+    border-color: var(--color-gold, #c99738) !important;
+    outline: 2px solid var(--color-gold, #c99738);
   }
 
   .num-btn.answered {
-    background-color: var(--color-brand-navy);
-    color: #ffffff;
-    border-color: var(--color-brand-navy);
+    background-color: var(--color-brand-navy, #0a2540) !important;
+    color: #ffffff !important;
+    border-color: var(--color-brand-navy, #0a2540) !important;
+    font-weight: 700;
+  }
+
+  .num-btn.active.answered {
+    border-color: var(--color-gold, #c99738) !important;
+    outline: 2px solid var(--color-gold, #c99738);
   }
 
   .num-btn.ragu {
     background-color: #f59e0b !important;
     color: #ffffff !important;
     border-color: #d97706 !important;
+    font-weight: 700;
   }
 
   .palette-legend {
