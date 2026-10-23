@@ -329,18 +329,18 @@
           <!-- Jika Sudah Selesai, Tampilkan Ringkasan Hasil Singkat -->
           {#if s.status_peserta === "SELESAI"}
             <div class="results-summary-box">
-              <div class="score-pill">
-                <span class="score-label">Indeks JPM:</span>
-                <span class="score-number font-mono">{s.jpm_percentage ?? 0}%</span>
+              <div class="summary-metric">
+                <span class="metric-label">Indeks JPM</span>
+                <span class="metric-value font-mono">{s.jpm_percentage ?? 0}%</span>
               </div>
-              <div class="score-pill">
-                <span class="score-label">Kategori:</span>
+              <div class="summary-status">
+                <span class="metric-label">Hasil Kelulusan</span>
                 {#if s.kategori_kelulusan === "MS"}
-                  <Badge variant="success">Memenuhi Syarat (MS)</Badge>
+                  <Badge variant="success" size="sm">Memenuhi Syarat (MS)</Badge>
                 {:else if s.kategori_kelulusan === "MMS"}
-                  <Badge variant="gold">Masih Memenuhi Syarat (MMS)</Badge>
+                  <Badge variant="gold" size="sm">Masih Memenuhi Syarat (MMS)</Badge>
                 {:else}
-                  <Badge variant="danger">Kurang Memenuhi Syarat (KMS)</Badge>
+                  <Badge variant="danger" size="sm">Kurang Memenuhi Syarat (KMS)</Badge>
                 {/if}
               </div>
             </div>
@@ -791,28 +791,41 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(212, 160, 23, 0.08);
-    border: 1px solid rgba(212, 160, 23, 0.2);
+    gap: var(--space-3);
+    background: rgba(201, 151, 56, 0.08);
+    border: 1px solid rgba(201, 151, 56, 0.25);
     padding: var(--space-3) var(--space-4);
     border-radius: var(--radius-md);
+    flex-wrap: wrap;
   }
 
-  .score-pill {
+  .summary-metric {
     display: flex;
-    align-items: center;
-    gap: var(--space-2);
+    flex-direction: column;
+    gap: 2px;
   }
 
-  .score-label {
-    font-size: var(--font-size-xs);
-    font-weight: 600;
-    color: var(--color-brand-navy);
+  .summary-status {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    min-width: 0;
   }
 
-  .score-number {
+  .metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-gold-dark, #92400e);
+  }
+
+  .metric-value {
     font-size: var(--font-size-base);
     font-weight: 800;
-    color: var(--color-brand-primary);
+    color: var(--color-brand-primary, #0a2540);
+    line-height: 1.2;
   }
 
   .session-card-footer {
