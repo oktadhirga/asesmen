@@ -168,7 +168,8 @@ Database MySQL `ases_men` telah memiliki 7 tabel fisik:
   - Indikator pelanggaran integritas (*tab switch violation counter*) dengan highlight visual dan kode token akses unik peserta.
 - **Bank Soal SJT PermenPANRB** ([admin/questions/+page.svelte](file:///d:/Development/assessment/frontend/src/routes/admin/questions/+page.svelte)):
   - Filter 9 dimensi kompetensi & target level jabatan (1-4).
-  - Modal pembuatan soal studi kasus dengan validasi ketat 4 opsi berbobot {1, 2, 3, 4} dan penandaan opsi bernilai optimal.
+  - Modal pembuatan dan modal penyuntingan (*Ubah / Edit*) soal studi kasus dengan validasi ketat 4 opsi berbobot unik {1, 2, 3, 4} dan penandaan opsi bernilai optimal.
+  - Sinkronisasi tampilan atribut `bobot_nilai` dan `skenario_kasus`.
 - **Master Data Pegawai ASN** ([admin/users/+page.svelte](file:///d:/Development/assessment/frontend/src/routes/admin/users/+page.svelte)):
   - Pencarian NIP / nama, filter jenjang (Pelaksana, Pengawas, Administrator, JPT) dan role.
   - Form modal tambah pegawai baru dengan password hash aman.

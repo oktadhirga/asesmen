@@ -219,8 +219,16 @@ export class ExamsService {
 
     const questionsWithAnswer = shuffledQuestions.map((q, idx) => {
       const rawOpts = optionsMap.get(q.id) || [];
-      // Pilihan opsi A, B, C, D tidak diacak melainkan diurutkan secara konsisten
-      const sortedOpts = [...rawOpts].sort((a, b) => a.label.localeCompare(b.label));
+      // Acak urutan pilihan jawaban secara deterministik per peserta dan butir soal
+      const optionSeed = participantId * 10007 + q.id;
+      const shuffledOpts = this.seededShuffle(rawOpts, optionSeed);
+      const displayLabels = ["A", "B", "C", "D"];
+      const displayOpts = shuffledOpts.map((opt, optIdx) => ({
+        id: opt.id,
+        question_id: opt.question_id,
+        label: displayLabels[optIdx] || opt.label,
+        teks_opsi: opt.teks_opsi,
+      }));
       const userAns = answerMap.get(q.id);
 
       return {
@@ -230,7 +238,7 @@ export class ExamsService {
         kode_soal: q.kode_soal,
         skenario_kasus: q.skenario_kasus,
         target_level: q.target_level,
-        options: sortedOpts,
+        options: displayOpts,
         jawaban_peserta: userAns
           ? {
               selected_option_id: userAns.selected_option_id,

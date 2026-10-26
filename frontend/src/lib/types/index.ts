@@ -40,15 +40,18 @@ export interface Competency {
 export interface QuestionOption {
   id: number;
   question_id: number;
-  label: "A" | "B" | "C" | "D";
+  label: "A" | "B" | "C" | "D" | string;
   teks_opsi: string;
-  bobot?: number; // Hanya tersedia untuk Admin/Asesor, dirahasiakan saat Ujian
+  bobot_nilai?: number; // Sesuai kolom database MySQL & response API
+  bobot?: number; // Alias kompatibilitas
 }
 
 export interface Question {
   id: number;
   competency_id: number;
-  kasus: string;
+  kode_soal?: string | null;
+  skenario_kasus: string;
+  kasus?: string; // Alias kompatibilitas
   target_level: number;
   created_at: string;
   competency?: Competency;
