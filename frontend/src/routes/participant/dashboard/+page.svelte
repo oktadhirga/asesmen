@@ -28,6 +28,7 @@
     waktu_selesai: string;
     durasi_menit: number;
     target_jenjang: string;
+    target_level?: number | null;
     status_sesi: "DRAFT" | "BERJALAN" | "SELESAI";
   }
 
@@ -155,7 +156,7 @@
         </div>
         <div class="mini-row">
           <span class="mini-label">Jenjang:</span>
-          <Badge variant="gold" size="sm">{auth.user.jenjang_jabatan}</Badge>
+          <Badge variant="gold" size="sm">{auth.user.jenjang_jabatan_nama || auth.user.jenjang_jabatan}</Badge>
         </div>
       </div>
     {/if}
@@ -321,8 +322,10 @@
               <span class="meta-value font-mono">{s.durasi_menit} Menit</span>
             </div>
             <div class="meta-box">
-              <span class="meta-label">Target Jenjang:</span>
-              <span class="meta-value">{s.target_jenjang}</span>
+              <span class="meta-label">Target Level:</span>
+              <span class="meta-value font-mono">
+                Level {s.target_level || (s.target_jenjang === 'JPT' || s.target_jenjang === 'JPT_PRATAMA' ? 4 : s.target_jenjang === 'ADMINISTRATOR' ? 3 : s.target_jenjang === 'PENGAWAS' ? 2 : s.target_jenjang === 'JPT_UTAMA' ? 5 : 1)}
+              </span>
             </div>
           </div>
 

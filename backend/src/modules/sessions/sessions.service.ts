@@ -55,16 +55,54 @@ export class SessionsService {
   }
 
   /**
-   * Helper resolusi jenjang_jabatan_id dari string kode atau integer
+   * Helper resolusi jenjang_jabatan_id dari string kode, level 1-5, atau integer
    */
   static async resolveJenjangId(val: string | number | null | undefined): Promise<number | null> {
-    if (!val) return null;
+    if (!val && val !== 0) return null;
     if (typeof val === "number") return val;
-    if (/^\d+$/.test(val)) return parseInt(val, 10);
+
+    const str = String(val).trim().toUpperCase();
+
+    // 1. Cek pola level 1-5 (e.g. "1".."5", "LEVEL_1".."LEVEL_5", "LEVEL 1".."LEVEL 5")
+    const levelMatch = str.match(/^(?:LEVEL[_\s-]?)?([1-5])$/);
+    if (levelMatch) {
+      const lvl = parseInt(levelMatch[1]!, 10);
+      const levelMap: Record<number, string> = {
+        1: "PELAKSANA",
+        2: "PENGAWAS",
+        3: "ADMINISTRATOR",
+        4: "JPT_PRATAMA",
+        5: "JPT_UTAMA",
+      };
+      const kode = levelMap[lvl];
+      if (kode) {
+        const found = await db
+          .select({ id: jenjangJabatan.id })
+          .from(jenjangJabatan)
+          .where(eq(jenjangJabatan.kode, kode))
+          .limit(1);
+        if (found[0]?.id) return found[0].id;
+      }
+    }
+
+    // 2. Jika angka murni di atas 5 (ID spesifik tabel jenjang_jabatan)
+    if (/^\d+$/.test(str)) return parseInt(str, 10);
+
+    // 3. Cek kode legacy JPT -> JPT_PRATAMA
+    if (str === "JPT") {
+      const found = await db
+        .select({ id: jenjangJabatan.id })
+        .from(jenjangJabatan)
+        .where(eq(jenjangJabatan.kode, "JPT_PRATAMA"))
+        .limit(1);
+      return found[0]?.id || null;
+    }
+
+    // 4. Cek kode jenjang_jabatan di DB
     const found = await db
       .select({ id: jenjangJabatan.id })
       .from(jenjangJabatan)
-      .where(eq(jenjangJabatan.kode, val.toUpperCase()))
+      .where(eq(jenjangJabatan.kode, str))
       .limit(1);
     return found[0]?.id || null;
   }
@@ -125,6 +163,7 @@ export class SessionsService {
         target_jenjang_id: assessmentSessions.target_jenjang_id,
         target_jenjang: jenjangJabatan.kode,
         target_jenjang_nama: jenjangJabatan.nama,
+        target_level: jenjangJabatan.level_standar_umum,
       })
       .from(assessmentSessions)
       .leftJoin(jenjangJabatan, eq(assessmentSessions.target_jenjang_id, jenjangJabatan.id))
@@ -187,6 +226,7 @@ export class SessionsService {
         target_jenjang_id: assessmentSessions.target_jenjang_id,
         target_jenjang: jenjangJabatan.kode,
         target_jenjang_nama: jenjangJabatan.nama,
+        target_level: jenjangJabatan.level_standar_umum,
       })
       .from(assessmentSessions)
       .leftJoin(jenjangJabatan, eq(assessmentSessions.target_jenjang_id, jenjangJabatan.id))
@@ -553,6 +593,7 @@ export class SessionsService {
         target_jenjang_id: assessmentSessions.target_jenjang_id,
         target_jenjang: jenjangJabatan.kode,
         target_jenjang_nama: jenjangJabatan.nama,
+        target_level: jenjangJabatan.level_standar_umum,
         participant_id: sessionParticipants.id,
         token_akses: sessionParticipants.token_akses,
         participant_status: sessionParticipants.status,
@@ -588,6 +629,7 @@ export class SessionsService {
       target_jenjang: r.target_jenjang,
       target_jenjang_id: r.target_jenjang_id,
       target_jenjang_nama: r.target_jenjang_nama,
+      target_level: r.target_level,
       participant_status: r.participant_status,
       status_peserta: r.participant_status,
       token_akses: r.token_akses,

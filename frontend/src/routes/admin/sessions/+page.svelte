@@ -18,7 +18,7 @@
   let newDurasiMenit = $state(90);
   let newWaktuMulai = $state("");
   let newWaktuSelesai = $state("");
-  let newTargetJenjang = $state<string>("PELAKSANA");
+  let newTargetJenjang = $state<string>("1");
   let modalErrorMessage = $state<string | null>(null);
 
   // Modal Edit Sesi
@@ -29,7 +29,7 @@
   let editDurasiMenit = $state(90);
   let editWaktuMulai = $state("");
   let editWaktuSelesai = $state("");
-  let editTargetJenjang = $state<string>("PELAKSANA");
+  let editTargetJenjang = $state<string>("1");
   let editModalErrorMessage = $state<string | null>(null);
   let isEditSubmitting = $state(false);
 
@@ -57,7 +57,7 @@
     newJudul = "";
     newDeskripsi = "";
     newDurasiMenit = 90;
-    newTargetJenjang = "PELAKSANA";
+    newTargetJenjang = "1";
     modalErrorMessage = null;
 
     const now = new Date();
@@ -126,7 +126,32 @@
     editJudul = session.judul;
     editDeskripsi = session.deskripsi || "";
     editDurasiMenit = session.durasi_menit || 90;
-    editTargetJenjang = session.target_jenjang || "PELAKSANA";
+
+    if (session.target_level) {
+      editTargetJenjang = String(session.target_level);
+    } else if (session.target_jenjang) {
+      const map: Record<string, string> = {
+        PELAKSANA: "1",
+        JF_PEMULA: "1",
+        PENGAWAS: "2",
+        JF_AHLI_PERTAMA: "2",
+        JF_TERAMPIL: "2",
+        JF_MAHIR: "2",
+        ADMINISTRATOR: "3",
+        JF_AHLI_MUDA: "3",
+        JF_PENYELIA: "3",
+        JPT_PRATAMA: "4",
+        JF_AHLI_MADYA: "4",
+        JF_AHLI_UTAMA: "4",
+        JPT_UTAMA: "5",
+        JPT_MADYA: "5",
+        JPT: "4",
+      };
+      editTargetJenjang = map[session.target_jenjang] || "1";
+    } else {
+      editTargetJenjang = "1";
+    }
+
     editModalErrorMessage = null;
 
     if (session.waktu_mulai) {
@@ -295,6 +320,11 @@
                   <div class="session-info">
                     <span class="session-code">{session.kode_sesi}</span>
                     <strong class="session-name">{session.judul}</strong>
+                    {#if session.target_level || session.target_jenjang}
+                      <span class="session-target-badge">
+                        Level {session.target_level || (session.target_jenjang === 'JPT' || session.target_jenjang === 'JPT_PRATAMA' ? 4 : session.target_jenjang === 'ADMINISTRATOR' ? 3 : session.target_jenjang === 'PENGAWAS' ? 2 : session.target_jenjang === 'JPT_UTAMA' ? 5 : 1)}
+                      </span>
+                    {/if}
                     {#if session.deskripsi}
                       <small class="session-desc-text">{session.deskripsi}</small>
                     {/if}
@@ -415,7 +445,7 @@
     <div class="form-row">
       <div class="form-group">
         <label for="select-target-jenjang" class="form-label">
-          Target Jenjang Jabatan
+          Target Level
         </label>
         <select
           id="select-target-jenjang"
@@ -423,10 +453,11 @@
           bind:value={newTargetJenjang}
           disabled={isSubmitting}
         >
-          <option value="PELAKSANA">Pelaksana</option>
-          <option value="PENGAWAS">Pengawas (Eselon IV)</option>
-          <option value="ADMINISTRATOR">Administrator (Eselon III)</option>
-          <option value="JPT">Jabatan Pimpinan Tinggi (JPT)</option>
+          <option value="1">Level 1</option>
+          <option value="2">Level 2</option>
+          <option value="3">Level 3</option>
+          <option value="4">Level 4</option>
+          <option value="5">Level 5</option>
         </select>
       </div>
 
@@ -515,17 +546,18 @@
 
       <div class="form-row">
         <div class="form-group">
-          <label for="select-edit-target-jenjang" class="form-label">Target Jenjang Jabatan</label>
+          <label for="select-edit-target-jenjang" class="form-label">Target Level</label>
           <select
             id="select-edit-target-jenjang"
             class="form-select"
             bind:value={editTargetJenjang}
             disabled={isEditSubmitting || editingSession.status !== "DRAFT"}
           >
-            <option value="PELAKSANA">Pelaksana</option>
-            <option value="PENGAWAS">Pengawas (Eselon IV)</option>
-            <option value="ADMINISTRATOR">Administrator (Eselon III)</option>
-            <option value="JPT">Jabatan Pimpinan Tinggi (JPT)</option>
+            <option value="1">Level 1</option>
+            <option value="2">Level 2</option>
+            <option value="3">Level 3</option>
+            <option value="4">Level 4</option>
+            <option value="5">Level 5</option>
           </select>
         </div>
 
@@ -650,6 +682,19 @@
 
   .session-name {
     color: var(--color-brand-primary);
+  }
+
+  .session-target-badge {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    font-size: 11px;
+    font-weight: var(--font-weight-medium);
+    padding: 1px 6px;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-bg-subtle);
+    color: var(--color-brand-primary);
+    border: 1px solid var(--color-border-subtle);
   }
 
   .session-desc-text {

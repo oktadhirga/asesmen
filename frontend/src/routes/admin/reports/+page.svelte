@@ -359,7 +359,7 @@
 
       <!-- Radar Chart Visualizer -->
       <div class="radar-box">
-        <RadarChart data={individualReport.radar_chart} maxLevel={4} size={440} />
+        <RadarChart data={individualReport.radar_chart} maxLevel={5} size={440} />
       </div>
 
       <!-- Dimension Breakdown Table -->

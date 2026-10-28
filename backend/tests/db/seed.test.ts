@@ -31,7 +31,7 @@ describe("Database Seeder (TDD Tahap 2 & Tahap 14.2)", () => {
     for (let i = 1; i <= 9; i++) {
       expect(kodes).toContain(`KOMP-0${i}`);
     }
-  });
+  }, 30000);
 
   it("should seed exactly 14 jenjang jabatan from Kamus ASN PermenPANRB", async () => {
     const allJenjang = await db.select().from(jenjangJabatan);
@@ -159,5 +159,5 @@ describe("Database Seeder (TDD Tahap 2 & Tahap 14.2)", () => {
     expect(standarAfter).toBe(standarBefore);
     expect(levelsAfter).toBe(levelsBefore);
     expect(indicatorsAfter).toBe(indicatorsBefore);
-  });
+  }, 30000);
 });

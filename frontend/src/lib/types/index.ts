@@ -23,9 +23,45 @@ export interface User {
   jabatan: string;
   instansi: string;
   unit_kerja: string;
-  jenjang_jabatan: JenjangJabatan;
+  jenjang_jabatan?: JenjangJabatan | string | null;
+  jenjang_jabatan_id?: number | null;
+  jenjang_jabatan_nama?: string | null;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
+}
+
+export interface MasterJabatan {
+  id: number;
+  kode: string;
+  nama: string;
+  kelompok_jabatan: "JPT" | "ADMINISTRASI" | "JF_KEAHLIAN" | "JF_KETERAMPILAN" | string;
+  level_standar_umum: number;
+  urutan?: number;
+}
+
+export interface CompetencyIndicator {
+  id: number;
+  level_id: number;
+  nomor_urut: number;
+  indikator: string;
+}
+
+export interface CompetencyLevel {
+  id: number;
+  competency_id: number;
+  level: number;
+  deskripsi: string;
+  indicators?: CompetencyIndicator[];
+}
+
+export interface JabatanStandard {
+  id: number;
+  jenjang_jabatan_id: number;
+  competency_id: number;
+  target_level: number;
+  competency_kode?: string;
+  competency_nama?: string;
+  competency_kategori?: string;
 }
 
 export interface Competency {
@@ -67,7 +103,10 @@ export interface AssessmentSession {
   waktu_selesai: string;
   durasi_menit: number;
   status: SessionStatus;
-  target_jenjang?: JenjangJabatan | null;
+  target_jenjang?: JenjangJabatan | string | null;
+  target_jenjang_id?: number | null;
+  target_jenjang_nama?: string | null;
+  target_level?: number | null;
   created_at: string;
   total_peserta?: number;
   participants?: SessionParticipant[];
@@ -103,6 +142,8 @@ export interface ExamStatusResponse {
 }
 
 export interface RadarDimensionItem {
+  id?: number;
+  competency_id?: number;
   kode: string;
   nama: string;
   kategori: KategoriKompetensi;

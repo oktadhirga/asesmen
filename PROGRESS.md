@@ -25,6 +25,7 @@
 | **12** | Frontend Peserta | ✅ Selesai | — | Portal peserta ujian ASN: dashboard jadwal sesi & input token akses, ruang ujian SJT fokus penuh dengan countdown timer & proctoring tab-switch counter, autosave real-time per respons, palet butir soal, dan laporan resmi JPM + visualisasi Spider Radar Chart 9 dimensi PermenPANRB 38/2017. |
 | **13** | Integration Test End-to-End | ✅ Selesai | — | Pengujian siklus penuh asesmen ASN dari autentikasi admin/peserta, setup master data, verifikasi token akses, core engine autosave SJT, proctoring tab-switch counter, submit lembar jawaban, hingga laporan individual radar chart 9 dimensi dan rekapitulasi JPM sesi. |
 | **14** | Kamus Kompetensi & Standar Level ASN | ✅ Selesai | — | Integrasi standar kompetensi jabatan PermenPANRB 38/2017: 4 tabel database baru (11 tabel fisik total), parser Excel mandiri (`Kamus_Kompetensi_ASN.xlsx`), seeder 14 jenjang & 126 pemetaan standar level, kalkulasi laporan dinamis berbasis standar jenjang sesi (Reports Service), dan REST API master jabatan & indikator perilaku. |
+| **15** | Penyelarasan Frontend UI & Kamus ASN | ✅ Selesai | — | Penyesuaian skala Radar Chart & form Bank Soal (skala level 1–5 murni), integrasi 14 jenjang jabatan ASN pada master pegawai, modal penelusuran kamus indikator perilaku pada laporan individu peserta, serta penambahan halaman katalog Master Standar Jabatan & Kamus ASN (`/admin/standards`). |
 
 ---
 
@@ -243,6 +244,22 @@ Database MySQL `ases_men` telah memiliki 11 tabel fisik (7 tabel inti + 4 tabel 
   - `GET /api/competencies/:id/indicators`: Mengambil kamus 15 butir indikator perilaku per level 1-5 untuk dimensi kompetensi tertentu.
   - Pembaruan validasi skema Elysia pada `POST /api/sessions` (`target_jenjang_id`) dan `POST /api/users` (`jenjang_jabatan_id`).
 
+### 15. Penyelarasan Frontend UI & Kamus ASN PermenPANRB No. 38 Tahun 2017
+- **Skala Radar Chart & Bank Soal SJT** ([frontend/src/lib/components/ui/RadarChart.svelte](file:///d:/Development/assessment/frontend/src/lib/components/ui/RadarChart.svelte), [admin/questions](file:///d:/Development/assessment/frontend/src/routes/admin/questions/+page.svelte)):
+  - Komponen SVG Radar Chart disesuaikan dengan prop `maxLevel = 5` default tanpa clipping polygon pada level 5.
+  - Dropdown filter, modal create, dan modal edit butir soal SJT diperluas mengakomodasi level 1 s.d. 5 dengan penamaan ringkas murni: **Level 1**, **Level 2**, **Level 3**, **Level 4**, **Level 5** tanpa label deskriptif tambahan.
+- **Integrasi 14 Jenjang Jabatan ASN pada Master Pegawai** ([admin/users](file:///d:/Development/assessment/frontend/src/routes/admin/users/+page.svelte)):
+  - Menggantikan 4 pilihan enum statis dengan 14 tingkatan jenjang jabatan ASN riil (JPT Utama/Madya/Pratama, Administrator, Pengawas, Pelaksana, JF Keahlian Utama/Madya/Muda/Pertama, JF Keterampilan Penyelia/Mahir/Terampil/Pemula) yang dikelompokkan secara rapi dengan `<optgroup>`.
+  - Filter dan modal tambah pegawai terhubung ke backend `jenjang_jabatan_id` dengan label nama jenjang ramah pengguna pada tabel.
+- **Kamus Indikator Perilaku pada Laporan Individu Peserta** ([participant/reports/[id]](file:///d:/Development/assessment/frontend/src/routes/participant/reports/%5Bid%5D/+page.svelte)):
+  - Menambahkan drawer/modal interaktif yang mengonsumsi endpoint `GET /api/competencies/:id/indicators`.
+  - Menampilkan deskripsi kompetensi, perbandingan skor capaian vs standar level, gap analisis, serta butir indikator perilaku konkret level 1–5 dengan penanda visual khusus (*highlight*) pada target level standar jabatan.
+  - Rekomendasi pengembangan (Area Prioritas / *Need Improvement*) dilengkapi tombol langsung untuk menginspeksi indikator perilaku target yang dipersyaratkan.
+- **Halaman Katalog Master Standar Jabatan & Kamus ASN** ([admin/standards](file:///d:/Development/assessment/frontend/src/routes/admin/standards/+page.svelte)):
+  - Rute baru `/admin/standards` yang terintegrasi pada menu navigasi layout Admin.
+  - Tab 1: **Matriks Standar Level** interaktif (14 jenjang $\times$ 9 dimensi kompetensi PermenPANRB) dengan filter kelompok jabatan dan panel inspeksi rincian standar.
+  - Tab 2: **Kamus Indikator Perilaku** yang menampilkan hierarki 9 dimensi $\times$ 5 level $\times$ 3 butir indikator perilaku per level secara terstruktur.
+
 ---
 
 ## Status Pengujian Otomatis (TDD Suite)
@@ -257,13 +274,13 @@ tests/modules/auth/auth.test.ts                       9 pass (27 expect calls)
 tests/modules/users/users.test.ts                    13 pass (49 expect calls)
 tests/modules/competency/competency.test.ts          10 pass (32 expect calls)
 tests/modules/questions/questions.test.ts            14 pass (44 expect calls)
-tests/modules/sessions/sessions.test.ts              16 pass (53 expect calls)
+tests/modules/sessions/sessions.test.ts              17 pass (57 expect calls)
 tests/modules/exams/exams.test.ts                    10 pass (384 expect calls)
 tests/modules/reports/reports.test.ts                 8 pass (99 expect calls)
 tests/modules/reports/reports-standar-jabatan.test.ts 3 pass (4 expect calls)
 tests/modules/jabatan/jabatan.test.ts                11 pass (45 expect calls)
 tests/integration/e2e-assessment-lifecycle.test.ts   24 pass (351 expect calls)
 ---------------------------------------------------------------------------------
-Total                                               143 pass, 0 fail (1504 assertions)
+Total                                               144 pass, 0 fail (1508 assertions)
 TypeScript / Svelte Compilation                       0 errors, 0 warnings (Exit code 0)
 ```

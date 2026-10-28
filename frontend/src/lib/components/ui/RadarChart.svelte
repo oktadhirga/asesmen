@@ -11,7 +11,7 @@
 
   let {
     data = [],
-    maxLevel = 4,
+    maxLevel = 5,
     size = 460,
     showLegend = true,
     class: className = "",

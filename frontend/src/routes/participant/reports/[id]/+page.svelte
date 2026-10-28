@@ -7,15 +7,84 @@
     Card,
     Badge,
     Alert,
+    Modal,
     RadarChart,
   } from "../../../../lib/components/ui";
-  import type { ParticipantReport, RadarDimensionItem } from "../../../../lib/types";
+  import type { ParticipantReport, RadarDimensionItem, Competency } from "../../../../lib/types";
 
   const participantId = $derived(Number(page.params.id));
 
   let report = $state<ParticipantReport | null>(null);
   let isLoading = $state(true);
   let errorMessage = $state<string | null>(null);
+
+  // Kamus Indikator Modal State
+  let isIndicatorModalOpen = $state(false);
+  let selectedDimension = $state<RadarDimensionItem | null>(null);
+  let indicatorLoading = $state(false);
+  let indicatorData = $state<{
+    competency: any;
+    indicators: Array<{
+      id: number;
+      level: number;
+      nama_level?: string;
+      deskripsi_level?: string;
+      nomor_indikator: number;
+      deskripsi_indikator: string;
+      nomor_urut?: number;
+      indikator?: string;
+    }>;
+  } | null>(null);
+
+  let indicatorsMap = $state<Record<number, any>>({});
+  let allCompetencies = $state<Competency[]>([]);
+
+  async function loadCompetenciesList() {
+    try {
+      const res = await ApiClient.get<Competency[]>("/competencies");
+      if (res.success && res.data) {
+        allCompetencies = res.data;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  async function openIndicatorModal(dim: RadarDimensionItem) {
+    selectedDimension = dim;
+    isIndicatorModalOpen = true;
+    indicatorLoading = true;
+    indicatorData = null;
+
+    let compId = dim.competency_id || dim.id;
+    if (!compId) {
+      const match = allCompetencies.find(c => c.kode === dim.kode);
+      if (match) compId = match.id;
+    }
+
+    if (!compId) {
+      indicatorLoading = false;
+      return;
+    }
+
+    if (indicatorsMap[compId]) {
+      indicatorData = indicatorsMap[compId];
+      indicatorLoading = false;
+      return;
+    }
+
+    try {
+      const res = await ApiClient.get<any>(`/competencies/${compId}/indicators`);
+      if (res.success && res.data) {
+        indicatorData = res.data;
+        indicatorsMap[compId] = res.data;
+      }
+    } catch {
+      // ignore
+    } finally {
+      indicatorLoading = false;
+    }
+  }
 
   async function loadReport() {
     isLoading = true;
@@ -77,6 +146,7 @@
 
   onMount(() => {
     loadReport();
+    loadCompetenciesList();
   });
 </script>
 
@@ -314,6 +384,7 @@
                 <th class="text-center">Capaian Riil</th>
                 <th class="text-center">Gap</th>
                 <th class="text-center">Pemenuhan</th>
+                <th class="text-center no-print">Kamus</th>
               </tr>
             </thead>
             <tbody>
@@ -330,7 +401,7 @@
                       {dim.kategori === "MANAJERIAL" ? "Manajerial" : "Sosio Kultural"}
                     </Badge>
                   </td>
-                  <td class="text-center font-mono font-semibold">{dim.standar}</td>
+                  <td class="text-center font-mono font-semibold">Level {dim.standar}</td>
                   <td class="text-center font-mono font-bold text-navy">
                     {dim.skor}
                   </td>
@@ -350,6 +421,16 @@
                     >
                       {dim.persentase_pemenuhan}%
                     </span>
+                  </td>
+                  <td class="text-center no-print">
+                    <button
+                      type="button"
+                      class="btn-kamus-link"
+                      title="Lihat Indikator Perilaku PermenPANRB"
+                      onclick={() => openIndicatorModal(dim)}
+                    >
+                      Lihat Indikator
+                    </button>
                   </td>
                 </tr>
               {/each}
@@ -403,8 +484,18 @@
             {#if improvements.length > 0}
               <ul class="dim-list">
                 {#each improvements as im}
-                  <li>
-                    <strong>{im.nama}</strong>: Capaian {im.skor} (Standar: {im.standar}, Defisit: {im.gap})
+                  <li class="improvement-row">
+                    <div class="im-desc">
+                      <strong>{im.nama}</strong>: Capaian {im.skor} (Standar: Level {im.standar}, Defisit: {im.gap})
+                    </div>
+                    <button
+                      type="button"
+                      class="btn-kamus-chip no-print"
+                      onclick={() => openIndicatorModal(im)}
+                      title={`Lihat indikator perilaku standar Level ${im.standar}`}
+                    >
+                      Lihat Indikator Level {im.standar} →
+                    </button>
                   </li>
                 {/each}
               </ul>
@@ -436,6 +527,89 @@
     </article>
   {/if}
 </div>
+
+<!-- Modal Kamus Indikator Perilaku PermenPANRB No. 38 Tahun 2017 -->
+<Modal
+  bind:isOpen={isIndicatorModalOpen}
+  title={`Kamus Indikator Perilaku: ${selectedDimension?.nama || ""}`}
+  size="lg"
+>
+  {#if indicatorLoading}
+    <div class="modal-loading-box">
+      <span class="spinner-large" aria-hidden="true"></span>
+      <p>Memuat standar indikator perilaku PermenPANRB...</p>
+    </div>
+  {:else if selectedDimension}
+    <div class="indicator-modal-content">
+      <div class="indicator-summary-card">
+        <div class="ind-meta-row">
+          <Badge variant={selectedDimension.kategori === "MANAJERIAL" ? "default" : "gold"}>
+            {selectedDimension.kategori === "MANAJERIAL" ? "Kompetensi Manajerial" : "Kompetensi Sosial Kultural"}
+          </Badge>
+          <span class="ind-code-tag font-mono">{selectedDimension.kode}</span>
+        </div>
+        {#if indicatorData?.competency?.deskripsi}
+          <p class="ind-comp-desc">{indicatorData.competency.deskripsi}</p>
+        {/if}
+        <div class="ind-score-badge-row">
+          <span class="ind-score-tag">
+            Standar Jabatan: <strong>Level {selectedDimension.standar}</strong>
+          </span>
+          <span class="ind-score-tag">
+            Capaian Riil: <strong>{selectedDimension.skor}</strong>
+          </span>
+          <span
+            class="ind-score-tag"
+            class:ind-tag-green={selectedDimension.gap >= 0}
+            class:ind-tag-red={selectedDimension.gap < 0}
+          >
+            Gap: <strong>{selectedDimension.gap >= 0 ? `+${selectedDimension.gap}` : selectedDimension.gap}</strong>
+          </span>
+        </div>
+      </div>
+
+      <div class="indicators-by-level-stack">
+        <h4 class="levels-heading">Daftar Indikator Perilaku Berdasarkan Level:</h4>
+        {#if indicatorData?.indicators && indicatorData.indicators.length > 0}
+          {#each [1, 2, 3, 4, 5] as lvl}
+            {@const lvlIndicators = indicatorData.indicators.filter((ind: any) => ind.level === lvl)}
+            {#if lvlIndicators.length > 0}
+              <div class="level-indicator-card" class:is-target-level={lvl === selectedDimension.standar}>
+                <div class="level-card-header">
+                  <div class="level-badge-wrap">
+                    <span class="lvl-badge">Level {lvl}</span>
+                    {#if lvl === selectedDimension.standar}
+                      <span class="target-flag-badge">★ Target Standar Jabatan</span>
+                    {/if}
+                  </div>
+                  {#if lvlIndicators[0]?.deskripsi_level}
+                    <p class="lvl-desc-text">{lvlIndicators[0].deskripsi_level}</p>
+                  {/if}
+                </div>
+                <ul class="indicators-list">
+                  {#each lvlIndicators as item}
+                    <li class="ind-item-row">
+                      <span class="ind-num">{lvl}.{item.nomor_indikator || item.nomor_urut}</span>
+                      <span class="ind-text">{item.deskripsi_indikator || item.indikator}</span>
+                    </li>
+                  {/each}
+                </ul>
+              </div>
+            {/if}
+          {/each}
+        {:else}
+          <p class="empty-dim-text">Belum ada data indikator perilaku untuk kompetensi ini.</p>
+        {/if}
+      </div>
+    </div>
+  {/if}
+
+  {#snippet footer()}
+    <Button variant="secondary" onclick={() => (isIndicatorModalOpen = false)}>
+      Tutup
+    </Button>
+  {/snippet}
+</Modal>
 
 <style>
   .report-page-container {
@@ -897,6 +1071,217 @@
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
+  }
+
+  /* Tombol & Chip Indikator */
+  .btn-kamus-link {
+    background: transparent;
+    border: 1px solid var(--color-border);
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-brand-primary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-kamus-link:hover {
+    background: var(--color-brand-primary);
+    color: #ffffff;
+    border-color: var(--color-brand-primary);
+  }
+
+  .improvement-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) 0;
+  }
+
+  .btn-kamus-chip {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 9999px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+  }
+
+  .btn-kamus-chip:hover {
+    background: #b91c1c;
+    color: #ffffff;
+    border-color: #b91c1c;
+  }
+
+  /* Modal Kamus Indikator */
+  .modal-loading-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-8);
+    gap: var(--space-3);
+    color: var(--color-text-muted);
+  }
+
+  .indicator-modal-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    max-height: 65vh;
+    overflow-y: auto;
+  }
+
+  .indicator-summary-card {
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .ind-meta-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .ind-code-tag {
+    font-size: 11px;
+    background: var(--color-border);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+  }
+
+  .ind-comp-desc {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .ind-score-badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-1);
+  }
+
+  .ind-score-tag {
+    font-size: 12px;
+    padding: 3px 8px;
+    background: #ffffff;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+  }
+
+  .ind-tag-green {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+    color: #065f46;
+  }
+
+  .ind-tag-red {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #991b1b;
+  }
+
+  .levels-heading {
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--color-text-main);
+    margin: var(--space-2) 0 var(--space-1) 0;
+  }
+
+  .indicators-by-level-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .level-indicator-card {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-3);
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .level-indicator-card.is-target-level {
+    border: 2px solid var(--color-gold-dark, #b45309);
+    background: #fffbeb;
+  }
+
+  .level-badge-wrap {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .lvl-badge {
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    background: var(--color-brand-navy);
+    color: #ffffff;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+  }
+
+  .target-flag-badge {
+    font-size: 11px;
+    font-weight: 700;
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+    padding: 2px 6px;
+    border-radius: 9999px;
+  }
+
+  .lvl-desc-text {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    font-style: italic;
+    margin: 0;
+  }
+
+  .indicators-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .ind-item-row {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    font-size: var(--font-size-xs);
+    line-height: 1.4;
+  }
+
+  .ind-num {
+    font-weight: 700;
+    color: var(--color-brand-primary);
+    min-width: 24px;
+    font-family: monospace;
+  }
+
+  .ind-text {
+    color: var(--color-text-main);
   }
 
   @media (max-width: 768px) {

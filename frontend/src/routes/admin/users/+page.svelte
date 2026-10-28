@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { ApiClient } from "../../../lib/api/client";
   import { Card, Badge, Button, Input, Modal, Alert } from "../../../lib/components/ui";
-  import type { User, Role, JenjangJabatan } from "../../../lib/types";
+  import type { User, Role, JenjangJabatan, MasterJabatan } from "../../../lib/types";
 
   let users = $state<User[]>([]);
   let isLoading = $state(true);
@@ -18,6 +18,30 @@
   let totalUsers = $state(0);
   const pageSize = 10;
 
+  // Master 14 Jenjang Jabatan
+  const DEFAULT_JENJANG_LIST: { kode: string; nama: string; kelompok: string }[] = [
+    // JPT
+    { kode: "JPT_UTAMA", nama: "JPT Utama", kelompok: "Jabatan Pimpinan Tinggi" },
+    { kode: "JPT_MADYA", nama: "JPT Madya", kelompok: "Jabatan Pimpinan Tinggi" },
+    { kode: "JPT_PRATAMA", nama: "JPT Pratama", kelompok: "Jabatan Pimpinan Tinggi" },
+    // Administrasi
+    { kode: "ADMINISTRATOR", nama: "Jabatan Administrator", kelompok: "Jabatan Administrasi" },
+    { kode: "PENGAWAS", nama: "Jabatan Pengawas", kelompok: "Jabatan Administrasi" },
+    { kode: "PELAKSANA", nama: "Jabatan Pelaksana", kelompok: "Jabatan Administrasi" },
+    // JF Keahlian
+    { kode: "JF_AHLI_UTAMA", nama: "JF Ahli Utama", kelompok: "Jabatan Fungsional Keahlian" },
+    { kode: "JF_AHLI_MADYA", nama: "JF Ahli Madya", kelompok: "Jabatan Fungsional Keahlian" },
+    { kode: "JF_AHLI_MUDA", nama: "JF Ahli Muda", kelompok: "Jabatan Fungsional Keahlian" },
+    { kode: "JF_AHLI_PERTAMA", nama: "JF Ahli Pertama", kelompok: "Jabatan Fungsional Keahlian" },
+    // JF Keterampilan
+    { kode: "JF_PENYELIA", nama: "JF Penyelia", kelompok: "Jabatan Fungsional Keterampilan" },
+    { kode: "JF_MAHIR", nama: "JF Mahir", kelompok: "Jabatan Fungsional Keterampilan" },
+    { kode: "JF_TERAMPIL", nama: "JF Terampil", kelompok: "Jabatan Fungsional Keterampilan" },
+    { kode: "JF_PEMULA", nama: "JF Pemula", kelompok: "Jabatan Fungsional Keterampilan" },
+  ];
+
+  let jabatanList = $state<MasterJabatan[]>([]);
+
   // Modal Tambah Pegawai
   let isCreateModalOpen = $state(false);
   let newNip = $state("");
@@ -28,7 +52,18 @@
   let newJabatan = $state("");
   let newUnitKerja = $state("");
   let newInstansi = $state("Pemerintah Kabupaten Trenggalek");
-  let newJenjang = $state<JenjangJabatan>("PELAKSANA");
+  let newJenjang = $state<string>("PELAKSANA");
+
+  async function loadJabatanList() {
+    try {
+      const res = await ApiClient.get<MasterJabatan[]>("/jabatan");
+      if (res.success && res.data && res.data.length > 0) {
+        jabatanList = res.data;
+      }
+    } catch {
+      // Menggunakan fallback DEFAULT_JENJANG_LIST
+    }
+  }
 
   async function loadUsers() {
     isLoading = true;
@@ -125,6 +160,7 @@
   }
 
   onMount(() => {
+    loadJabatanList();
     loadUsers();
   });
 </script>
@@ -185,11 +221,29 @@
       <div class="filter-item">
         <label for="jenjang-filter" class="filter-label">Jenjang Jabatan:</label>
         <select id="jenjang-filter" bind:value={filterJenjang} onchange={loadUsers} class="select-input">
-          <option value="">Semua Jenjang</option>
-          <option value="PELAKSANA">Pelaksana</option>
-          <option value="PENGAWAS">Pengawas (Eselon IV)</option>
-          <option value="ADMINISTRATOR">Administrator (Eselon III)</option>
-          <option value="JPT">JPT (Eselon II)</option>
+          <option value="">Semua 14 Jenjang</option>
+          <optgroup label="Jabatan Pimpinan Tinggi">
+            <option value="JPT_UTAMA">JPT Utama</option>
+            <option value="JPT_MADYA">JPT Madya</option>
+            <option value="JPT_PRATAMA">JPT Pratama</option>
+          </optgroup>
+          <optgroup label="Jabatan Administrasi">
+            <option value="ADMINISTRATOR">Jabatan Administrator</option>
+            <option value="PENGAWAS">Jabatan Pengawas</option>
+            <option value="PELAKSANA">Jabatan Pelaksana</option>
+          </optgroup>
+          <optgroup label="Jabatan Fungsional Keahlian">
+            <option value="JF_AHLI_UTAMA">JF Ahli Utama</option>
+            <option value="JF_AHLI_MADYA">JF Ahli Madya</option>
+            <option value="JF_AHLI_MUDA">JF Ahli Muda</option>
+            <option value="JF_AHLI_PERTAMA">JF Ahli Pertama</option>
+          </optgroup>
+          <optgroup label="Jabatan Fungsional Keterampilan">
+            <option value="JF_PENYELIA">JF Penyelia</option>
+            <option value="JF_MAHIR">JF Mahir</option>
+            <option value="JF_TERAMPIL">JF Terampil</option>
+            <option value="JF_PEMULA">JF Pemula</option>
+          </optgroup>
         </select>
       </div>
     </div>
@@ -236,7 +290,7 @@
                 </td>
                 <td>
                   <Badge variant="default" size="sm">
-                    {u.jenjang_jabatan}
+                    {u.jenjang_jabatan_nama || u.jenjang_jabatan}
                   </Badge>
                 </td>
                 <td>
@@ -316,12 +370,30 @@
       </div>
 
       <div class="form-group">
-        <label for="user-jenjang" class="input-label">Jenjang Jabatan:</label>
-        <select id="user-jenjang" bind:value={newJenjang} class="select-input full-width">
-          <option value="PELAKSANA">Pelaksana</option>
-          <option value="PENGAWAS">Pengawas (Eselon IV)</option>
-          <option value="ADMINISTRATOR">Administrator (Eselon III)</option>
-          <option value="JPT">JPT Pratama (Eselon II)</option>
+        <label for="user-jenjang" class="input-label">Jenjang Jabatan ASN:</label>
+        <select id="user-jenjang" bind:value={newJenjang} class="select-input full-width" disabled={isSubmitting}>
+          <optgroup label="Jabatan Pimpinan Tinggi">
+            <option value="JPT_UTAMA">JPT Utama</option>
+            <option value="JPT_MADYA">JPT Madya</option>
+            <option value="JPT_PRATAMA">JPT Pratama</option>
+          </optgroup>
+          <optgroup label="Jabatan Administrasi">
+            <option value="ADMINISTRATOR">Jabatan Administrator</option>
+            <option value="PENGAWAS">Jabatan Pengawas</option>
+            <option value="PELAKSANA">Jabatan Pelaksana</option>
+          </optgroup>
+          <optgroup label="Jabatan Fungsional Keahlian">
+            <option value="JF_AHLI_UTAMA">JF Ahli Utama</option>
+            <option value="JF_AHLI_MADYA">JF Ahli Madya</option>
+            <option value="JF_AHLI_MUDA">JF Ahli Muda</option>
+            <option value="JF_AHLI_PERTAMA">JF Ahli Pertama</option>
+          </optgroup>
+          <optgroup label="Jabatan Fungsional Keterampilan">
+            <option value="JF_PENYELIA">JF Penyelia</option>
+            <option value="JF_MAHIR">JF Mahir</option>
+            <option value="JF_TERAMPIL">JF Terampil</option>
+            <option value="JF_PEMULA">JF Pemula</option>
+          </optgroup>
         </select>
       </div>
     </div>

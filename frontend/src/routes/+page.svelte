@@ -86,7 +86,7 @@
         <p class="section-desc">
           Komponen SVG interaktif untuk pemetaan capaian riil vs standar jabatan:
         </p>
-        <RadarChart data={sampleRadarData} maxLevel={4} size={420} />
+        <RadarChart data={sampleRadarData} maxLevel={5} size={420} />
       </div>
 
       {#snippet footer()}

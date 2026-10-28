@@ -299,13 +299,14 @@
       </div>
 
       <div class="filter-item">
-        <label for="level-filter" class="filter-label">Target Level Jabatan:</label>
+        <label for="level-filter" class="filter-label">Target Level:</label>
         <select id="level-filter" bind:value={selectedTargetLevel} onchange={handleFilterChange} class="select-input">
-          <option value="">Semua Level (1-4)</option>
-          <option value="1">Level 1 (Pelaksana)</option>
-          <option value="2">Level 2 (Pengawas / Eselon IV)</option>
-          <option value="3">Level 3 (Administrator / Eselon III)</option>
-          <option value="4">Level 4 (JPT Pratama / Eselon II)</option>
+          <option value="">Semua Level (1-5)</option>
+          <option value="1">Level 1</option>
+          <option value="2">Level 2</option>
+          <option value="3">Level 3</option>
+          <option value="4">Level 4</option>
+          <option value="5">Level 5</option>
         </select>
       </div>
 
@@ -348,7 +349,7 @@
                   </Badge>
                 {/if}
                 <Badge variant="default" size="sm">
-                  Target Level {q.target_level}
+                  Level {q.target_level}
                 </Badge>
               </div>
 
@@ -465,12 +466,13 @@
       </div>
 
       <div class="form-group">
-        <label for="modal-lvl" class="input-label">Target Level Jabatan:</label>
+        <label for="modal-lvl" class="input-label">Target Level:</label>
         <select id="modal-lvl" bind:value={newTargetLevel} class="select-input full-width">
-          <option value={1}>Level 1 - Pelaksana</option>
-          <option value={2}>Level 2 - Pengawas / Eselon IV</option>
-          <option value={3}>Level 3 - Administrator / Eselon III</option>
-          <option value={4}>Level 4 - JPT Pratama / Eselon II</option>
+          <option value={1}>Level 1</option>
+          <option value={2}>Level 2</option>
+          <option value={3}>Level 3</option>
+          <option value={4}>Level 4</option>
+          <option value={5}>Level 5</option>
         </select>
       </div>
     </div>
@@ -564,12 +566,13 @@
       </div>
 
       <div class="form-group">
-        <label for="edit-modal-lvl" class="input-label">Target Level Jabatan:</label>
+        <label for="edit-modal-lvl" class="input-label">Target Level:</label>
         <select id="edit-modal-lvl" bind:value={editTargetLevel} class="select-input full-width">
-          <option value={1}>Level 1 - Pelaksana</option>
-          <option value={2}>Level 2 - Pengawas / Eselon IV</option>
-          <option value={3}>Level 3 - Administrator / Eselon III</option>
-          <option value={4}>Level 4 - JPT Pratama / Eselon II</option>
+          <option value={1}>Level 1</option>
+          <option value={2}>Level 2</option>
+          <option value={3}>Level 3</option>
+          <option value={4}>Level 4</option>
+          <option value={5}>Level 5</option>
         </select>
       </div>
     </div>

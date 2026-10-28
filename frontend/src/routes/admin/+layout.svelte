@@ -40,6 +40,7 @@
         <a href="/admin/questions" class="admin-tab">Bank Soal SJT</a>
         <a href="/admin/users" class="admin-tab">Pegawai ASN</a>
         <a href="/admin/reports" class="admin-tab">Rekapitulasi JPM</a>
+        <a href="/admin/standards" class="admin-tab">Kamus & Standar ASN</a>
       </nav>
     </header>
 

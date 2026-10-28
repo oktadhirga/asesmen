@@ -827,6 +827,83 @@ describe("TDD Tahap 14.4: API Master Jenjang Jabatan & Standar Level", () => {
 
 ---
 
+## Tahap 15: Penyelarasan Frontend UI dengan Kamus Kompetensi & Standar Level ASN
+
+> **Tujuan**: Menyelaraskan seluruh antarmuka pengguna (Frontend Admin & Peserta) dengan data riil Kamus ASN PermenPANRB No. 38 Tahun 2017: skala level 1–5, 14 jenjang jabatan ASN, eksplorasi kamus indikator perilaku, dan pengkayaan rekomendasi pengembangan (IDP) pada laporan individual.
+
+### 15.1: Penyesuaian Skala Radar Chart & Form Bank Soal SJT (Skala Level 1-5)
+
+**Ringkasan Tugas**  
+1. Memperbarui komponen `RadarChart.svelte` agar prop `maxLevel` ber-default `5` (mengakomodasi standar level 5 pada JF Ahli Utama, JPT Utama, dan JPT Madya). Menyesuaikan pemanggilan di `admin/reports/+page.svelte` dan `+page.svelte`.
+2. Menambahkan pilihan `Level 5 - JPT Utama / Madya` pada filter pencarian, modal pembuatan, dan modal penyuntingan butir soal SJT di `admin/questions/+page.svelte`.
+
+**Target File**  
+- `frontend/src/lib/components/ui/RadarChart.svelte`
+- `frontend/src/routes/admin/questions/+page.svelte`
+- `frontend/src/routes/admin/reports/+page.svelte`
+- `frontend/src/routes/+page.svelte`
+
+**Kriteria Keberhasilan / Acceptance Criteria**  
+- [ ] Radar Chart mampu merender data hingga level 5 secara proporsional tanpa poligon terpotong keluar batas canvas.
+- [ ] Admin dapat memfilter dan membuat/mengedit butir soal SJT dengan target level 5.
+- [ ] `bun run check` di `frontend/` lolos tanpa error/warning.
+
+---
+
+### 15.2: Integrasi 14 Jenjang Jabatan ASN pada Master Pegawai
+
+**Ringkasan Tugas**  
+1. Mengganti dropdown 4 pilihan enum lama (`PELAKSANA`, `PENGAWAS`, `ADMINISTRATOR`, `JPT`) pada filter dan form modal "Tambah Pegawai" di `admin/users/+page.svelte` dengan 14 jenjang jabatan ASN riil (dikelompokkan dengan `<optgroup>` per kelompok jabatan: JPT, Administrasi, JF Keahlian, JF Keterampilan).
+2. Menampilkan nama jenjang jabatan yang ramah pengguna (`jenjang_jabatan_nama` / `jenjang_jabatan`) pada tabel daftar pegawai.
+
+**Target File**  
+- `frontend/src/routes/admin/users/+page.svelte`
+
+**Kriteria Keberhasilan / Acceptance Criteria**  
+- [ ] Admin dapat mendaftarkan ASN baru dengan memilih salah satu dari 14 jenjang jabatan (termasuk fungsional ahli dan terampil).
+- [ ] Filter daftar pegawai dapat memfilter berdasarkan 14 jenjang jabatan.
+- [ ] `bun run check` di `frontend/` lolos tanpa error/warning.
+
+---
+
+### 15.3: Pengkayaan Laporan Peserta & Drawer Kamus Indikator Perilaku
+
+**Ringkasan Tugas**  
+1. Memperbarui Dashboard Peserta (`participant/dashboard/+page.svelte`) agar kartu penugasan sesi menampilkan informasi target level dan jenjang secara jelas (misal: "Level 1 • Jabatan Pelaksana").
+2. Memperkaya halaman Laporan Hasil Individu (`participant/reports/[id]/+page.svelte`) dengan fitur modal / accordion **"Lihat Kamus Indikator Perilaku"**:
+   - Menghubungkan ke endpoint `GET /api/competencies/:id/indicators`.
+   - Menampilkan 3 butir indikator perilaku konkret yang diharapkan pada level standar tersebut, terutama untuk dimensi yang mengalami kesenjangan (*gap* negatif / *Need Improvement*).
+
+**Target File**  
+- `frontend/src/routes/participant/dashboard/+page.svelte`
+- `frontend/src/routes/participant/reports/[id]/+page.svelte`
+
+**Kriteria Keberhasilan / Acceptance Criteria**  
+- [ ] Peserta dapat melihat target standar level pada sesi yang ditugaskan.
+- [ ] Peserta dan Asesor dapat menginspeksi indikator perilaku PermenPANRB yang diharapkan pada dimensi kompetensi hasil asesmen.
+- [ ] `bun run check` di `frontend/` lolos tanpa error/warning.
+
+---
+
+### 15.4: Halaman Katalog Master Standar Jabatan & Kamus ASN Admin
+
+**Ringkasan Tugas**  
+1. Menambahkan menu navigasi baru **"Kamus & Standar ASN"** pada layout Admin (`admin/+layout.svelte`).
+2. Membuat halaman baru `frontend/src/routes/admin/standards/+page.svelte` yang menyediakan:
+   - **Tab Matriks Standar Level**: Tabel interaktif pemetaan 14 jenjang jabatan $\times$ 9 dimensi kompetensi PermenPANRB 38/2017 (mengonsumsi `GET /api/jabatan` dan `GET /api/jabatan/:id/standards`).
+   - **Tab Kamus Indikator Perilaku**: Tampilan penelusuran hierarki 9 dimensi $\times$ 5 level $\times$ 3 butir indikator perilaku (mengonsumsi `GET /api/competencies/:id/indicators`).
+
+**Target File**  
+- `frontend/src/routes/admin/+layout.svelte`
+- `frontend/src/routes/admin/standards/+page.svelte`
+
+**Kriteria Keberhasilan / Acceptance Criteria**  
+- [ ] Halaman `/admin/standards` dapat diakses dari menu admin dan menampilkan matriks 14 jenjang serta kamus indikator secara interaktif.
+- [ ] Administrator dan Asesor memiliki referensi regulasi digital langsung di dalam aplikasi.
+- [ ] `bun run check` di `frontend/` dan `bun test` di `backend/` 100% lolos.
+
+---
+
 ## Dependency Graph (Urutan Eksekusi Master)
 
 ```mermaid
@@ -846,12 +923,14 @@ graph TD
     T13 --> T11["Tahap 11: FE Admin"]
     T13 --> T12["Tahap 12: FE Peserta"]
     T13 --> T14["Tahap 14: Standar Jabatan & Kamus ASN (PermenPANRB 38/2017)"]
+    T14 --> T15["Tahap 15: Penyelarasan Frontend UI & Kamus ASN"]
 
     style T1 fill:#0b1e3f,color:#d4af37,stroke:#d4af37
     style T8 fill:#0b1e3f,color:#d4af37,stroke:#d4af37
     style T9 fill:#0b1e3f,color:#d4af37,stroke:#d4af37
     style T12 fill:#0b1e3f,color:#d4af37,stroke:#d4af37
-    style T14 fill:#14532d,color:#ffffff,stroke:#22c55e
+    style T14 fill:#0b1e3f,color:#d4af37,stroke:#d4af37
+    style T15 fill:#14532d,color:#ffffff,stroke:#22c55e
 ```
 
-> **Catatan Fase**: Tahap 1 s.d. 13 mencakup fondasi MVP aplikasi asesmen ASN yang telah berstatus selesai (**Done**). Tahap 14 menyempurnakan kalkulasi standar kompetensi berbasis data riil Kamus ASN PermenPANRB 38/2017 Lampiran II, III, dan IV.
+> **Catatan Fase**: Tahap 1 s.d. 14 mencakup fondasi MVP serta engine kalkulasi standar kompetensi berbasis data riil Kamus ASN PermenPANRB 38/2017 yang telah berstatus selesai (**Done**). Tahap 15 menyempurnakan antarmuka pengguna agar selaras penuh dengan kapabilitas master data baru.

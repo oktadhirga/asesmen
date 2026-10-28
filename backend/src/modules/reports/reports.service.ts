@@ -12,6 +12,8 @@ import {
 import { eq, sql, asc, desc } from "drizzle-orm";
 
 export interface RadarDimensionItem {
+  id?: number;
+  competency_id?: number;
   kode: string;
   nama: string;
   kategori: "MANAJERIAL" | "SOSIO_KULTURAL";
@@ -275,6 +277,8 @@ export class ReportsService {
         standar > 0 ? Number(((skorRataRata / standar) * 100).toFixed(2)) : 0;
 
       radarData.push({
+        id: comp.id,
+        competency_id: comp.id,
         kode: comp.kode,
         nama: comp.nama,
         kategori: comp.kategori,

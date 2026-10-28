@@ -157,6 +157,41 @@ describe("Modul Sessions (Sesi & Penjadwalan Asesmen) — TDD Tahap 7", () => {
       createdSessionId = json.data.id;
     });
 
+    it("harus berhasil membuat sesi baru dengan target_jenjang level: 1-5 (level_standar_umum)", async () => {
+      await db.delete(assessmentSessions).where(eq(assessmentSessions.kode_sesi, "SESI-TEST-LVL3"));
+      const now = new Date();
+      const startTime = new Date(now.getTime() + 60 * 60 * 1000);
+      const endTime = new Date(startTime.getTime() + 90 * 60 * 1000);
+
+      try {
+        const res = await app.handle(
+          new Request("http://localhost/api/sessions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${adminToken}`,
+            },
+            body: JSON.stringify({
+              judul: "Sesi Uji Level 3 Standar Umum",
+              kode_sesi: "SESI-TEST-LVL3",
+              waktu_mulai: startTime.toISOString(),
+              waktu_selesai: endTime.toISOString(),
+              durasi_menit: 60,
+              target_jenjang: "3", // Level 3 -> Administrator (level_standar_umum: 3)
+            }),
+          })
+        );
+
+        expect(res.status).toBe(201);
+        const json = (await res.json()) as any;
+        expect(json.success).toBe(true);
+        expect(json.data.target_jenjang).toBe("ADMINISTRATOR");
+        expect(json.data.target_level).toBe(3);
+      } finally {
+        await db.delete(assessmentSessions).where(eq(assessmentSessions.kode_sesi, "SESI-TEST-LVL3"));
+      }
+    });
+
     it("harus menolak sesi jika kode_sesi sudah terdaftar (400 Bad Request)", async () => {
       const duplicatePayload = {
         judul: "Sesi Duplikat",
