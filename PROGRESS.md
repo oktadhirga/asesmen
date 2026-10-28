@@ -24,20 +24,25 @@
 | **11** | Frontend Admin | ✅ Selesai | — | Dashboard statistik, CRUD master data (pegawai & bank soal SJT), manajemen sesi & siklus, Live Proctoring tab-switch monitor, dan rekapitulasi JPM radar chart. |
 | **12** | Frontend Peserta | ✅ Selesai | — | Portal peserta ujian ASN: dashboard jadwal sesi & input token akses, ruang ujian SJT fokus penuh dengan countdown timer & proctoring tab-switch counter, autosave real-time per respons, palet butir soal, dan laporan resmi JPM + visualisasi Spider Radar Chart 9 dimensi PermenPANRB 38/2017. |
 | **13** | Integration Test End-to-End | ✅ Selesai | — | Pengujian siklus penuh asesmen ASN dari autentikasi admin/peserta, setup master data, verifikasi token akses, core engine autosave SJT, proctoring tab-switch counter, submit lembar jawaban, hingga laporan individual radar chart 9 dimensi dan rekapitulasi JPM sesi. |
+| **14** | Kamus Kompetensi & Standar Level ASN | ✅ Selesai | — | Integrasi standar kompetensi jabatan PermenPANRB 38/2017: 4 tabel database baru (11 tabel fisik total), parser Excel mandiri (`Kamus_Kompetensi_ASN.xlsx`), seeder 14 jenjang & 126 pemetaan standar level, kalkulasi laporan dinamis berbasis standar jenjang sesi (Reports Service), dan REST API master jabatan & indikator perilaku. |
 
 ---
 
 ## Rincian Teknis yang Telah Diimplementasikan
 
 ### 1. Database Relasional (MySQL via Drizzle ORM)
-Database MySQL `ases_men` telah memiliki 7 tabel fisik:
-1. `users`: Menyimpan data akun Admin & ASN (NIP unik, password Bcrypt, role, jabatan, instansi, jenjang jabatan).
+Database MySQL `ases_men` telah memiliki 11 tabel fisik (7 tabel inti + 4 tabel master Kamus ASN):
+1. `users`: Menyimpan data akun Admin & ASN (NIP unik, password Bcrypt, role, jabatan, instansi, foreign key `jenjang_jabatan_id`).
 2. `competencies`: 9 dimensi PermenPANRB (8 Manajerial + 1 Sosial Kultural).
 3. `questions`: Skenario studi kasus birokrasi SJT dan target level jabatan (1-4).
 4. `question_options`: Pilihan respon A, B, C, D dengan bobot nilai tepat 1 s.d. 4.
-5. `assessment_sessions`: Sesi asesmen berbatas waktu dengan kode sesi unik dan status siklus.
+5. `assessment_sessions`: Sesi asesmen berbatas waktu dengan kode sesi unik, target jenjang foreign key `target_jenjang_id`, dan status siklus.
 6. `session_participants`: Relasi peserta dengan sesi, token akses, catatan pelanggaran tab switch, total nilai, dan persentase JPM.
 7. `participant_answers`: Catatan jawaban real-time (autosave), opsi terpilih, bobot nilai, dan status penandaan ragu-ragu.
+8. `jenjang_jabatan`: 14 tingkatan hierarki jabatan ASN (JPT Utama, Madya, Pratama, Administrator, Pengawas, Pelaksana, JF Ahli Utama s.d. Pertama, JF Terampil).
+9. `standar_kompetensi_jabatan`: Matriks pemetaan standar level (126 kombinasi = 14 jenjang $\times$ 9 kompetensi) sesuai Lampiran PermenPANRB 38/2017.
+10. `competency_levels`: 45 deskripsi level kompetensi (9 kompetensi $\times$ level 1 s.d. 5).
+11. `competency_indicators`: 135 butir indikator perilaku spesifik (3 indikator per level kompetensi).
 
 ### 2. Akun Demo Siap Uji
 - **Admin / Asesor Utama**:
@@ -213,6 +218,31 @@ Database MySQL `ases_men` telah memiliki 7 tabel fisik:
   - **Fase 6 (Laporan Individual & Radar Chart 9 Dimensi)**: Pengambilan laporan JPM % individu, klasifikasi kategori (MS / MMS / KMS), dataset radar chart 9 dimensi (skor, standar SKJ, gap, pemenuhan), dan proteksi isolasi data laporan antar peserta (403 Forbidden).
   - **Fase 7 (Rekapitulasi Sesi & Auto-Recalculate)**: Laporan sesi agregat bagi Administrator (statistik, distribusi kelulusan, dan leaderboard peringkat), eksekusi trigger rekalkulasi otomatis, dan penutupan sesi menjadi `SELESAI`.
 
+### 14. Modul Kamus Kompetensi & Standar Level ASN (PermenPANRB 38/2017)
+- **Skema Database Relasional** ([backend/src/db/schema.ts](file:///d:/Development/assessment/backend/src/db/schema.ts)):
+  - 4 tabel baru: `jenjang_jabatan` (14 tingkatan), `standar_kompetensi_jabatan` (126 matriks pemetaan), `competency_levels` (45 deskripsi level 1-5), dan `competency_indicators` (135 butir indikator perilaku).
+  - Migrasi relasi pengguna dan sesi dari kolom enum statis menjadi foreign key integer (`jenjang_jabatan_id` dan `target_jenjang_id`) dengan referensi eksplisit dan constraint aman.
+- **Parser Excel Mandiri** ([backend/src/utils/excel-parser.ts](file:///d:/Development/assessment/backend/src/utils/excel-parser.ts)):
+  - Ekstraksi format berkas `.xlsx` (`Kamus_Kompetensi_ASN.xlsx`) secara in-memory menggunakan `node:zlib` (inflate) dan XML regex stream parsing tanpa ketergantungan library pihak ketiga.
+  - Membaca sheet *'Level per Jabatan'*, *'Kamus Kompetensi'*, *'Ringkasan Level'*, dan *'Definisi Kompetensi'*.
+- **Database Seeder Kamus ASN** ([backend/src/db/seed.ts](file:///d:/Development/assessment/backend/src/db/seed.ts)):
+  - Injeksi otomatis 14 jenjang jabatan ASN beserta level standar umum.
+  - Injeksi 126 standar kompetensi jabatan termasuk *edge cases* regulasi PermenPANRB No. 38 Tahun 2017:
+    - **JF Ahli Utama**: Integritas (`KOMP-01`) & Perekat Bangsa (`KOMP-09`) level 5, 7 dimensi lainnya level 4.
+    - **JF Terampil**: Integritas, Kerjasama & Perekat Bangsa level 2, 6 dimensi lainnya level 1.
+  - Injeksi 45 deskripsi level kompetensi dan 135 butir indikator perilaku.
+  - Idempotent dan teroptimasi batch insert berkecepatan tinggi (< 30ms).
+- **Penilaian Berbasis Standar Jenjang Sesi** ([backend/src/modules/reports/reports.service.ts](file:///d:/Development/assessment/backend/src/modules/reports/reports.service.ts)):
+  - Kalkulasi laporan individual mengambil standar level dinamis dari tabel `standar_kompetensi_jabatan` berdasarkan `target_jenjang_id` pada sesi asesmen yang diikuti peserta.
+  - Mendukung fallback aman ke level standar 3.0 jika sesi tidak menentukan jenjang jabatan.
+  - Menghitung gap analisis per dimensi dan kalkulasi persentase JPM riil terhadap standar jenjang jabatan target.
+- **REST API Master Jabatan & Indikator** ([backend/src/modules/jabatan/](file:///d:/Development/assessment/backend/src/modules/jabatan)):
+  - `GET /api/jabatan`: Mengambil daftar 14 tingkatan jabatan ASN.
+  - `GET /api/jabatan/:id`: Mengambil informasi detail satu jenjang jabatan.
+  - `GET /api/jabatan/:id/standards`: Mengambil matriks 9 standar kompetensi jabatan untuk jenjang yang dipilih.
+  - `GET /api/competencies/:id/indicators`: Mengambil kamus 15 butir indikator perilaku per level 1-5 untuk dimensi kompetensi tertentu.
+  - Pembaruan validasi skema Elysia pada `POST /api/sessions` (`target_jenjang_id`) dan `POST /api/users` (`jenjang_jabatan_id`).
+
 ---
 
 ## Status Pengujian Otomatis (TDD Suite)
@@ -220,17 +250,20 @@ Database MySQL `ases_men` telah memiliki 7 tabel fisik:
 Semua pengujian berjalan menggunakan runner `bun test` dengan status **100% GREEN**:
 
 ```
-tests/db/schema.test.ts                          8 pass (58 expect calls)
-tests/db/seed.test.ts                            5 pass (88 expect calls)
-tests/modules/auth/auth.test.ts                  9 pass (27 expect calls)
-tests/modules/users/users.test.ts               13 pass (49 expect calls)
-tests/modules/competency/competency.test.ts     10 pass (32 expect calls)
-tests/modules/questions/questions.test.ts       14 pass (44 expect calls)
-tests/modules/sessions/sessions.test.ts         16 pass (53 expect calls)
-tests/modules/exams/exams.test.ts               10 pass (384 expect calls)
-tests/modules/reports/reports.test.ts            8 pass (99 expect calls)
-tests/integration/e2e-assessment-lifecycle.test.ts 24 pass (281 expect calls)
------------------------------------------------------------------------------
-Total                                          117 pass, 0 fail (1115 assertions)
-TypeScript / Svelte Compilation                  0 errors, 0 warnings (Exit code 0)
+tests/db/schema.test.ts                              12 pass (82 expect calls)
+tests/db/seed.test.ts                                 8 pass (133 expect calls)
+tests/utils/excel-parser.test.ts                      5 pass (11 expect calls)
+tests/modules/auth/auth.test.ts                       9 pass (27 expect calls)
+tests/modules/users/users.test.ts                    13 pass (49 expect calls)
+tests/modules/competency/competency.test.ts          10 pass (32 expect calls)
+tests/modules/questions/questions.test.ts            14 pass (44 expect calls)
+tests/modules/sessions/sessions.test.ts              16 pass (53 expect calls)
+tests/modules/exams/exams.test.ts                    10 pass (384 expect calls)
+tests/modules/reports/reports.test.ts                 8 pass (99 expect calls)
+tests/modules/reports/reports-standar-jabatan.test.ts 3 pass (4 expect calls)
+tests/modules/jabatan/jabatan.test.ts                11 pass (45 expect calls)
+tests/integration/e2e-assessment-lifecycle.test.ts   24 pass (351 expect calls)
+---------------------------------------------------------------------------------
+Total                                               143 pass, 0 fail (1504 assertions)
+TypeScript / Svelte Compilation                       0 errors, 0 warnings (Exit code 0)
 ```

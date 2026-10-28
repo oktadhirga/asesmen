@@ -30,7 +30,39 @@ export const competencyRoute = new Elysia()
         }
       )
 
-      // 2. GET /api/competencies/:id (Detail Kompetensi)
+      // 2. GET /api/competencies/:id/indicators (Kamus Indikator Perilaku PermenPANRB)
+      .get(
+        "/:id/indicators",
+        async ({ params, set }) => {
+          const result = await CompetencyService.getIndicatorsByCompetencyId(
+            Number(params.id)
+          );
+
+          if (!result) {
+            set.status = 404;
+            return {
+              success: false,
+              message: "Dimensi kompetensi tidak ditemukan",
+            };
+          }
+
+          return {
+            success: true,
+            total: result.indicators.length,
+            data: {
+              competency: result.competency,
+              indicators: result.indicators,
+            },
+          };
+        },
+        {
+          params: t.Object({
+            id: t.String(),
+          }),
+        }
+      )
+
+      // 3. GET /api/competencies/:id (Detail Kompetensi)
       .get(
         "/:id",
         async ({ params, set }) => {

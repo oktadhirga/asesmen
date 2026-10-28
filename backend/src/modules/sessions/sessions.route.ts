@@ -81,6 +81,7 @@ export const sessionsRoute = new Elysia()
             limit: query.limit ? Number(query.limit) : 10,
             status: query.status as any,
             target_jenjang: query.target_jenjang as any,
+            target_jenjang_id: query.target_jenjang_id ? Number(query.target_jenjang_id) : undefined,
             search: query.search,
           });
 
@@ -102,14 +103,8 @@ export const sessionsRoute = new Elysia()
                 t.Literal("SELESAI"),
               ])
             ),
-            target_jenjang: t.Optional(
-              t.Union([
-                t.Literal("PELAKSANA"),
-                t.Literal("PENGAWAS"),
-                t.Literal("ADMINISTRATOR"),
-                t.Literal("JPT"),
-              ])
-            ),
+            target_jenjang: t.Optional(t.String()),
+            target_jenjang_id: t.Optional(t.String()),
             search: t.Optional(t.String()),
           }),
         }
@@ -157,6 +152,12 @@ export const sessionsRoute = new Elysia()
               waktu_selesai: body.waktu_selesai,
               durasi_menit: body.durasi_menit ? Number(body.durasi_menit) : 60,
               target_jenjang: body.target_jenjang as any,
+              target_jenjang_id:
+                body.target_jenjang_id !== undefined
+                  ? body.target_jenjang_id === null
+                    ? null
+                    : Number(body.target_jenjang_id)
+                  : undefined,
             });
 
             set.status = 201;
@@ -182,16 +183,8 @@ export const sessionsRoute = new Elysia()
             waktu_mulai: t.String(),
             waktu_selesai: t.String(),
             durasi_menit: t.Optional(t.Number({ minimum: 10 })),
-            target_jenjang: t.Optional(
-              t.Nullable(
-                t.Union([
-                  t.Literal("PELAKSANA"),
-                  t.Literal("PENGAWAS"),
-                  t.Literal("ADMINISTRATOR"),
-                  t.Literal("JPT"),
-                ])
-              )
-            ),
+            target_jenjang_id: t.Optional(t.Nullable(t.Number())),
+            target_jenjang: t.Optional(t.Nullable(t.String())),
           }),
         }
       )
@@ -213,6 +206,12 @@ export const sessionsRoute = new Elysia()
                   ? Number(body.durasi_menit)
                   : undefined,
                 target_jenjang: body.target_jenjang as any,
+                target_jenjang_id:
+                  body.target_jenjang_id !== undefined
+                    ? body.target_jenjang_id === null
+                      ? null
+                      : Number(body.target_jenjang_id)
+                    : undefined,
                 status: body.status as any,
               }
             );
@@ -250,16 +249,8 @@ export const sessionsRoute = new Elysia()
             waktu_mulai: t.Optional(t.String()),
             waktu_selesai: t.Optional(t.String()),
             durasi_menit: t.Optional(t.Number()),
-            target_jenjang: t.Optional(
-              t.Nullable(
-                t.Union([
-                  t.Literal("PELAKSANA"),
-                  t.Literal("PENGAWAS"),
-                  t.Literal("ADMINISTRATOR"),
-                  t.Literal("JPT"),
-                ])
-              )
-            ),
+            target_jenjang_id: t.Optional(t.Nullable(t.Number())),
+            target_jenjang: t.Optional(t.Nullable(t.String())),
             status: t.Optional(
               t.Union([
                 t.Literal("DRAFT"),

@@ -1,5 +1,9 @@
 import { db } from "../../db/connection";
-import { competencies } from "../../db/schema";
+import {
+  competencies,
+  competencyLevels,
+  competencyIndicators,
+} from "../../db/schema";
 import { eq, asc } from "drizzle-orm";
 
 export interface UpdateCompetencyData {
@@ -66,5 +70,41 @@ export class CompetencyService {
       .where(eq(competencies.id, id));
 
     return await this.getCompetencyById(id);
+  }
+
+  /**
+   * Mengambil seluruh indikator perilaku (15 butir per kompetensi) beserta deskripsi level 1-5
+   */
+  static async getIndicatorsByCompetencyId(competencyId: number) {
+    const competency = await this.getCompetencyById(competencyId);
+    if (!competency) {
+      return null;
+    }
+
+    const rows = await db
+      .select({
+        id: competencyIndicators.id,
+        competency_id: competencyLevels.competency_id,
+        competency_level_id: competencyIndicators.competency_level_id,
+        level: competencyLevels.level,
+        nama_level: competencyLevels.nama_level,
+        deskripsi_level: competencyLevels.deskripsi,
+        nomor_indikator: competencyIndicators.nomor_indikator,
+        deskripsi_indikator: competencyIndicators.deskripsi_indikator,
+        nomor_urut: competencyIndicators.nomor_indikator,
+        indikator: competencyIndicators.deskripsi_indikator,
+      })
+      .from(competencyIndicators)
+      .innerJoin(
+        competencyLevels,
+        eq(competencyIndicators.competency_level_id, competencyLevels.id)
+      )
+      .where(eq(competencyLevels.competency_id, competencyId))
+      .orderBy(competencyLevels.level, competencyIndicators.nomor_indikator);
+
+    return {
+      competency,
+      indicators: rows,
+    };
   }
 }

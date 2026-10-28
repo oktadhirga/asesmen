@@ -1,5 +1,5 @@
 import { db } from "../../db/connection";
-import { users } from "../../db/schema";
+import { users, jenjangJabatan } from "../../db/schema";
 import { eq, or, like, sql, and, SQL } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { SafeUser, sanitizeUser } from "../auth/auth.service";
@@ -9,7 +9,8 @@ export interface ListUsersParams {
   limit?: number;
   search?: string;
   role?: "ADMIN" | "PESERTA";
-  jenjang_jabatan?: "PELAKSANA" | "PENGAWAS" | "ADMINISTRATOR" | "JPT";
+  jenjang_jabatan?: string;
+  jenjang_jabatan_id?: number;
 }
 
 export interface CreateUserData {
@@ -21,7 +22,8 @@ export interface CreateUserData {
   jabatan?: string | null;
   instansi?: string | null;
   unit_kerja?: string | null;
-  jenjang_jabatan?: "PELAKSANA" | "PENGAWAS" | "ADMINISTRATOR" | "JPT" | null;
+  jenjang_jabatan?: string | null;
+  jenjang_jabatan_id?: number | null;
 }
 
 export interface UpdateUserData {
@@ -33,10 +35,26 @@ export interface UpdateUserData {
   jabatan?: string | null;
   instansi?: string | null;
   unit_kerja?: string | null;
-  jenjang_jabatan?: "PELAKSANA" | "PENGAWAS" | "ADMINISTRATOR" | "JPT" | null;
+  jenjang_jabatan?: string | null;
+  jenjang_jabatan_id?: number | null;
 }
 
 export class UsersService {
+  /**
+   * Helper resolusi jenjang_jabatan_id dari string kode atau integer
+   */
+  static async resolveJenjangId(val: string | number | null | undefined): Promise<number | null> {
+    if (!val) return null;
+    if (typeof val === "number") return val;
+    if (/^\d+$/.test(val)) return parseInt(val, 10);
+    const found = await db
+      .select({ id: jenjangJabatan.id })
+      .from(jenjangJabatan)
+      .where(eq(jenjangJabatan.kode, val.toUpperCase()))
+      .limit(1);
+    return found[0]?.id || null;
+  }
+
   /**
    * Mengambil daftar pengguna dengan filter, pencarian, dan paginasi
    */
@@ -58,8 +76,13 @@ export class UsersService {
       conditions.push(eq(users.role, params.role));
     }
 
-    if (params.jenjang_jabatan) {
-      conditions.push(eq(users.jenjang_jabatan, params.jenjang_jabatan));
+    if (params.jenjang_jabatan_id) {
+      conditions.push(eq(users.jenjang_jabatan_id, Number(params.jenjang_jabatan_id)));
+    } else if (params.jenjang_jabatan) {
+      const resolvedId = await this.resolveJenjangId(params.jenjang_jabatan);
+      if (resolvedId) {
+        conditions.push(eq(users.jenjang_jabatan_id, resolvedId));
+      }
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -74,8 +97,23 @@ export class UsersService {
 
     // 2. Ambil data dengan paginasi
     const userRows = await db
-      .select()
+      .select({
+        id: users.id,
+        nip: users.nip,
+        nama: users.nama,
+        email: users.email,
+        password_hash: users.password_hash,
+        role: users.role,
+        jabatan: users.jabatan,
+        instansi: users.instansi,
+        unit_kerja: users.unit_kerja,
+        jenjang_jabatan_id: users.jenjang_jabatan_id,
+        jenjang_jabatan: jenjangJabatan.kode,
+        jenjang_jabatan_nama: jenjangJabatan.nama,
+        created_at: users.created_at,
+      })
       .from(users)
+      .leftJoin(jenjangJabatan, eq(users.jenjang_jabatan_id, jenjangJabatan.id))
       .where(whereClause)
       .limit(limit)
       .offset(offset)
@@ -99,9 +137,56 @@ export class UsersService {
    */
   static async getUserById(id: number): Promise<SafeUser | null> {
     const found = await db
-      .select()
+      .select({
+        id: users.id,
+        nip: users.nip,
+        nama: users.nama,
+        email: users.email,
+        password_hash: users.password_hash,
+        role: users.role,
+        jabatan: users.jabatan,
+        instansi: users.instansi,
+        unit_kerja: users.unit_kerja,
+        jenjang_jabatan_id: users.jenjang_jabatan_id,
+        jenjang_jabatan: jenjangJabatan.kode,
+        jenjang_jabatan_nama: jenjangJabatan.nama,
+        created_at: users.created_at,
+      })
       .from(users)
+      .leftJoin(jenjangJabatan, eq(users.jenjang_jabatan_id, jenjangJabatan.id))
       .where(eq(users.id, id))
+      .limit(1);
+
+    if (found.length === 0) {
+      return null;
+    }
+
+    return sanitizeUser(found[0]!);
+  }
+
+  /**
+   * Mengambil detail pengguna berdasarkan NIP
+   */
+  static async getUserByNip(nip: string): Promise<SafeUser | null> {
+    const found = await db
+      .select({
+        id: users.id,
+        nip: users.nip,
+        nama: users.nama,
+        email: users.email,
+        password_hash: users.password_hash,
+        role: users.role,
+        jabatan: users.jabatan,
+        instansi: users.instansi,
+        unit_kerja: users.unit_kerja,
+        jenjang_jabatan_id: users.jenjang_jabatan_id,
+        jenjang_jabatan: jenjangJabatan.kode,
+        jenjang_jabatan_nama: jenjangJabatan.nama,
+        created_at: users.created_at,
+      })
+      .from(users)
+      .leftJoin(jenjangJabatan, eq(users.jenjang_jabatan_id, jenjangJabatan.id))
+      .where(eq(users.nip, nip))
       .limit(1);
 
     if (found.length === 0) {
@@ -130,6 +215,10 @@ export class UsersService {
     const rawPassword = data.password && data.password.trim() !== "" ? data.password : "password123";
     const passwordHash = await bcrypt.hash(rawPassword, 10);
 
+    const jenjangId = await this.resolveJenjangId(
+      data.jenjang_jabatan_id ?? data.jenjang_jabatan ?? "PELAKSANA"
+    );
+
     // 3. Simpan ke database
     await db.insert(users).values({
       nip: data.nip.trim(),
@@ -140,17 +229,12 @@ export class UsersService {
       jabatan: data.jabatan?.trim() || null,
       instansi: data.instansi?.trim() || null,
       unit_kerja: data.unit_kerja?.trim() || null,
-      jenjang_jabatan: data.jenjang_jabatan || "PELAKSANA",
+      jenjang_jabatan_id: jenjangId,
     });
 
     // 4. Ambil data yang baru dibuat
-    const [created] = await db
-      .select()
-      .from(users)
-      .where(eq(users.nip, data.nip.trim()))
-      .limit(1);
-
-    return sanitizeUser(created!);
+    const created = await this.getUserByNip(data.nip.trim());
+    return created!;
   }
 
   /**
@@ -189,7 +273,12 @@ export class UsersService {
     if (data.jabatan !== undefined) updatePayload.jabatan = data.jabatan?.trim() || null;
     if (data.instansi !== undefined) updatePayload.instansi = data.instansi?.trim() || null;
     if (data.unit_kerja !== undefined) updatePayload.unit_kerja = data.unit_kerja?.trim() || null;
-    if (data.jenjang_jabatan !== undefined) updatePayload.jenjang_jabatan = data.jenjang_jabatan;
+
+    if (data.jenjang_jabatan_id !== undefined || data.jenjang_jabatan !== undefined) {
+      updatePayload.jenjang_jabatan_id = await this.resolveJenjangId(
+        data.jenjang_jabatan_id ?? data.jenjang_jabatan
+      );
+    }
 
     if (data.password && data.password.trim() !== "") {
       updatePayload.password_hash = await bcrypt.hash(data.password, 10);
@@ -197,13 +286,7 @@ export class UsersService {
 
     await db.update(users).set(updatePayload).where(eq(users.id, id));
 
-    const [updated] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, id))
-      .limit(1);
-
-    return sanitizeUser(updated!);
+    return await this.getUserById(id);
   }
 
   /**

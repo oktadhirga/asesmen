@@ -1,7 +1,43 @@
 import { db } from "./connection";
-import { competencies, questions, questionOptions, users } from "./schema";
-import { eq } from "drizzle-orm";
+import {
+  competencies,
+  questions,
+  questionOptions,
+  users,
+  jenjangJabatan,
+  standarKompetensiJabatan,
+  competencyLevels,
+  competencyIndicators,
+} from "./schema";
+import { eq, and } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+import { parseKamusKompetensiExcel } from "../utils/excel-parser";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
+
+function getExcelPath(): string {
+  const candidates = [
+    resolve(process.cwd(), "Kamus_Kompetensi_ASN.xlsx"),
+    resolve(__dirname, "../../../Kamus_Kompetensi_ASN.xlsx"),
+    resolve(process.cwd(), "../Kamus_Kompetensi_ASN.xlsx"),
+  ];
+  for (const c of candidates) {
+    if (existsSync(c)) return c;
+  }
+  return candidates[0]!;
+}
+
+const KODE_TO_KOMP_MAP: Record<string, string> = {
+  "M.01": "KOMP-01",
+  "M.02": "KOMP-02",
+  "M.03": "KOMP-03",
+  "M.04": "KOMP-04",
+  "M.05": "KOMP-05",
+  "M.06": "KOMP-06",
+  "M.07": "KOMP-07",
+  "M.08": "KOMP-08",
+  "SK.01": "KOMP-09",
+};
 
 export const initialCompetencies = [
   {
@@ -65,7 +101,7 @@ export const initialCompetencies = [
     nama: "Pengambilan Keputusan",
     kategori: "MANAJERIAL" as const,
     deskripsi:
-      "Kemampuan membuat keputusan yang tepat waktu dan berprinsip berdasarkan analisis risiko, informasi yang valid, serta mempertimbangkan kepentingan publik dan institusi.",
+      "Kemampuan membuat keputusan yang tepat waktu dan berdasarkan fakta, serta bertanggung jawab terhadap implikasi dan dampak keputusan yang diambil.",
     bobot_standar: "3.00",
   },
   {
@@ -73,537 +109,538 @@ export const initialCompetencies = [
     nama: "Perekat Bangsa",
     kategori: "SOSIO_KULTURAL" as const,
     deskripsi:
-      "Kemampuan dalam mempromosikan sikap toleransi, keterbukaan, peka terhadap perbedaan latar belakang suku, agama, dan budaya serta menjaga persatuan bangsa dalam lingkungan kerja dan masyarakat.",
+      "Kemampuan mempromosikan sikap toleransi, persatuan, dan kebhinekaan dalam masyarakat majemuk serta menjaga keutuhan Negara Kesatuan Republik Indonesia.",
     bobot_standar: "3.00",
   },
 ];
 
 export const initialQuestions = [
-  // KOMP-01: Integritas
+  // 1. Integritas (KOMP-01) - Soal 1
   {
     compKode: "KOMP-01",
     kode_soal: "SJT-INT-01",
-    target_level: 2,
     skenario_kasus:
-      "Anda ditugaskan sebagai panitia pengadaan barang dan jasa di dinas Anda. Seorang rekan kerja dekat yang juga merupakan kerabat dari salah satu penyedia barang meminta Anda membocorkan dokumen Harga Perkiraan Sendiri (HPS) dengan janji imbalan tanda terima kasih.",
+      "Anda bertugas sebagai pejabat pengadaan barang dan jasa di dinas. Salah satu vendor peserta tender yang juga merupakan kerabat dekat Anda meminta bantuan agar berkas administrasinya yang kurang lengkap dapat diloloskan dengan janji akan segera melengkapinya setelah evaluasi tahap awal selesai. Sikap yang paling tepat Anda ambil adalah...",
+    target_level: 2,
     options: [
       {
         label: "A",
-        teks_opsi: "Menolak tegas permintaan tersebut, mengingatkan rekan kerja tentang kode etik ASN dan konsekuensi hukum, serta melaporkan potensi intervensi kepada atasan langsung.",
+        teks_opsi: "Menolak permintaan tersebut dengan tegas, menjelaskan bahwa seluruh berkas wajib lengkap sesuai batas waktu yang diatur dalam regulasi, dan menyarankan mengikuti prosedur resmi.",
         bobot_nilai: 4,
       },
       {
         label: "B",
-        teks_opsi: "Menolak memberikan dokumen HPS dengan alasan sistem pengadaan sudah terkunci secara elektronik dan menghindari pembicaraan lebih lanjut.",
+        teks_opsi: "Meminta pendapat ketua panitia pengadaan terlebih dahulu terkait status berkas tersebut sebelum mengambil keputusan akhir.",
         bobot_nilai: 3,
       },
       {
         label: "C",
-        teks_opsi: "Memberikan gambaran umum rentang pagu anggaran tanpa memberikan rincian dokumen spesifik agar hubungan pertemanan tetap terjaga.",
+        teks_opsi: "Menyarankan kerabat tersebut untuk melobi anggota panitia lainnya agar keputusan tidak sepenuhnya berada di tangan Anda.",
         bobot_nilai: 2,
       },
       {
         label: "D",
-        teks_opsi: "Menyetujui permintaan tersebut selama dokumen tersebut tidak langsung diberikan kepada penyedia melainkan melalui perantara rekan Anda.",
+        teks_opsi: "Mengabulkan permintaan tersebut karena yakin kerabat tersebut beritikad baik dan pasti melengkapinya nanti.",
         bobot_nilai: 1,
       },
     ],
   },
+  // 1. Integritas (KOMP-01) - Soal 2
   {
     compKode: "KOMP-01",
     kode_soal: "SJT-INT-02",
-    target_level: 1,
     skenario_kasus:
-      "Saat menyusun Laporan Pertanggungjawaban (LPJ) kegiatan dinas, atasan Anda meminta Anda menambahkan bukti pengeluaran akomodasi fiktif untuk menutupi selisih biaya operasional yang tidak terduga.",
+      "Anda menemukan kekeliruan perhitungan pada laporan realisasi anggaran triwulanan yang menguntungkan sisa pagu unit kerja Anda. Rekan Anda menyarankan untuk membiarkannya karena laporan telah ditandatangani oleh pimpinan. Tindakan yang Anda lakukan adalah...",
+    target_level: 3,
     options: [
       {
         label: "A",
-        teks_opsi: "Menyampaikan secara sopan kepada atasan bahwa nota fiktif melanggar tata kelola keuangan negara, dan mengusulkan alternatif penyelesaian legal melalui revisi anggaran.",
+        teks_opsi: "Segera menyusun rekonsiliasi data dan melaporkan kekeliruan tersebut kepada atasan langsung beserta usulan revisi laporan keuangan.",
         bobot_nilai: 4,
       },
       {
         label: "B",
-        teks_opsi: "Menolak mengerjakan nota fiktif tersebut dan menyerahkan berkas laporan kepada pegawai lain.",
+        teks_opsi: "Mencatat kekeliruan tersebut dan menunggu saat audit internal rutin untuk menyampaikan koreksi secara resmi.",
         bobot_nilai: 3,
       },
       {
         label: "C",
-        teks_opsi: "Membuat nota fiktif tersebut namun meminta disposisi tertulis sebagai bentuk perlindungan diri bila ada pemeriksaan Inspektorat.",
+        teks_opsi: "Menyesuaikan pengeluaran triwulan berikutnya agar secara kumulatif selisih anggaran tersebut tertutupi tanpa membuat revisi formal.",
         bobot_nilai: 2,
       },
       {
         label: "D",
-        teks_opsi: "Langsung menuruti instruksi atasan karena menganggap perintah pimpinan adalah tanggung jawab penuh atasan.",
+        teks_opsi: "Mengikuti saran rekan kerja demi menjaga nama baik unit kerja dan menghindari teguran atasan.",
         bobot_nilai: 1,
       },
     ],
   },
-
-  // KOMP-02: Kerjasama
+  // 2. Kerjasama (KOMP-02) - Soal 1
   {
     compKode: "KOMP-02",
-    kode_soal: "SJT-KRS-01",
+    kode_soal: "SJT-KS-01",
+    skenario_kasus:
+      "Unit kerja Anda dibebani tugas mendesak untuk menyusun dokumen evaluasi SAKIP dalam waktu 3 hari. Seorang anggota tim menolak bagian tugasnya karena merasa beban kerjanya tidak proporsional dibanding rekan lain. Sikap Anda sebagai rekan tim adalah...",
     target_level: 2,
-    skenario_kasus:
-      "Dalam tim kerja penyusunan LAKIP (Laporan Akuntabilitas Kinerja), ada seorang anggota tim yang pasif dan sering terlambat menyerahkan data unitnya sehingga menghambat kemajuan seluruh tim.",
     options: [
       {
         label: "A",
-        teks_opsi: "Mengajak anggota tersebut berdialog empat mata untuk memahami kendalanya, membantu merumuskan solusi teknis, dan menetapkan kesepakatan jadwal baru bersama.",
+        teks_opsi: "Mengajak seluruh anggota tim bermusyawarah secara transparan untuk membagi ulang beban kerja secara adil dan berkomitmen saling membantu agar target selesai tepat waktu.",
         bobot_nilai: 4,
       },
       {
         label: "B",
-        teks_opsi: "Membagi beban kerja yang belum selesai kepada anggota tim lain yang lebih kompeten agar tenggat waktu tercapai.",
+        teks_opsi: "Mengambil alih sebagian tugas anggota tersebut agar pekerjaan lekas berjalan tanpa memicu konflik berkepanjangan.",
         bobot_nilai: 3,
       },
       {
         label: "C",
-        teks_opsi: "Mengingatkan yang bersangkutan di grup chat tim agar merasa malu dan segera menyelesaikan tanggung jawabnya.",
+        teks_opsi: "Melaporkan sikap anggota tersebut langsung kepada pimpinan agar diberikan teguran disiplin.",
         bobot_nilai: 2,
       },
       {
         label: "D",
-        teks_opsi: "Membiarkan saja keterlambatan tersebut dan langsung melaporkan kelalaian yang bersangkutan kepada Kepala Dinas.",
+        teks_opsi: "Membiarkan anggota tersebut dan fokus menyelesaikan porsi tugas pribadi masing-masing.",
         bobot_nilai: 1,
       },
     ],
   },
+  // 2. Kerjasama (KOMP-02) - Soal 2
   {
     compKode: "KOMP-02",
-    kode_soal: "SJT-KRS-02",
-    target_level: 1,
+    kode_soal: "SJT-KS-02",
     skenario_kasus:
-      "Seksi Anda mendapatkan tugas lintas sektoral mendadak bersama unit kerja lain yang selama ini memiliki hubungan kerja kurang harmonis dengan seksi Anda.",
+      "Instansi Anda membentuk tim gugus tugas lintas Organisasi Perangkat Daerah (OPD) untuk penanganan stunting. Perwakilan dari dinas lain terkesan pasif dan lambat memberikan data dukung yang dibutuhkan tim Anda. Respon yang paling tepat adalah...",
+    target_level: 3,
     options: [
       {
         label: "A",
-        teks_opsi: "Menginisiasi pertemuan koordinasi awal yang inklusif untuk menyamakan persepsi, membagi peran secara adil, dan fokus pada target bersama demi kepentingan instansi.",
+        teks_opsi: "Melakukan koordinasi proaktif, mendatangi unit terkait untuk memahami hambatan mereka, serta menawarkan format data yang lebih sederhana untuk mempercepat pengisian.",
         bobot_nilai: 4,
       },
       {
         label: "B",
-        teks_opsi: "Melaksanakan tugas bagian seksi sendiri dengan sebaik mungkin tanpa terlalu banyak campur tangan dalam urusan seksi lain.",
+        teks_opsi: "Mengirimkan surat teguran dinas resmi kedua dengan tembusan kepada Sekretaris Daerah.",
         bobot_nilai: 3,
       },
       {
         label: "C",
-        teks_opsi: "Menunggu unit kerja lain mengambil inisiatif terlebih dahulu karena khawatir disalahartikan mengambil alih kewenangan.",
+        teks_opsi: "Melanjutkan analisis tanpa data dari OPD tersebut dan mencantumkan keterangan tidak tersedianya data pada laporan akhir.",
         bobot_nilai: 2,
       },
       {
         label: "D",
-        teks_opsi: "Meminta atasan membatalkan pelibatan tim Anda dalam tugas lintas sektoral tersebut karena potensi konflik.",
+        teks_opsi: "Menunggu hingga OPD tersebut merespon dengan sendirinya tanpa melakukan upaya konfirmasi.",
         bobot_nilai: 1,
       },
     ],
   },
-
-  // KOMP-03: Komunikasi
+  // 3. Komunikasi (KOMP-03) - Soal 1
   {
     compKode: "KOMP-03",
     kode_soal: "SJT-KOM-01",
-    target_level: 2,
     skenario_kasus:
-      "Terdapat kebijakan baru mengenai absensi digital berbasis GPS yang menimbulkan penolakan keras dan kesalahpahaman dari sebagian besar pegawai di lingkungan instansi Anda.",
+      "Anda ditugaskan menyosialisasikan regulasi baru terkait perizinan berusaha kepada kelompok asosiasi UMKM yang sebelumnya belum memahami sistem perizinan digital OSS-RBA. Strategi komunikasi yang Anda pilih adalah...",
+    target_level: 2,
     options: [
       {
         label: "A",
-        teks_opsi: "Menyusun bahan sosialisasi ringkas dan komunikatif berupa FAQ dan video panduan, membuka forum tanya-jawab terbuka untuk menampung kekhawatiran dan meluruskan persepsi.",
+        teks_opsi: "Menyampaikan substansi regulasi menggunakan bahasa yang lugas, ilustrasi kasus nyata, visual infografis, dan menyediakan sesi simulasi praktik langsung.",
         bobot_nilai: 4,
       },
       {
         label: "B",
-        teks_opsi: "Membuat surat edaran penegasan resmi yang menjelaskan dasar hukum dan kewajiban menaati aturan tersebut tanpa kompromi.",
+        teks_opsi: "Membacakan pasal-pasal kunci secara runtut sesuai batang tubuh peraturan perundang-undangan dan membagikan salinan dokumen PDF.",
         bobot_nilai: 3,
       },
       {
         label: "C",
-        teks_opsi: "Menjelaskan aturan hanya kepada perwakilan pegawai yang paling vokal mengkritik kebijakan tersebut.",
+        teks_opsi: "Membuka sesi tanya jawab sejak awal pertemuan tanpa memberikan paparan pengantar kerangka konsep regulasi.",
         bobot_nilai: 2,
       },
       {
         label: "D",
-        teks_opsi: "Mengabaikan keluhan pegawai dengan anggapan bahwa lama-kelamaan pegawai akan terbiasa dengan sendirinya.",
+        teks_opsi: "Meminta peserta membaca regulasi mandiri di portal resmi dan mengirimkan pertanyaan tertulis lewat surat elektronik.",
         bobot_nilai: 1,
       },
     ],
   },
+  // 3. Komunikasi (KOMP-03) - Soal 2
   {
     compKode: "KOMP-03",
     kode_soal: "SJT-KOM-02",
-    target_level: 1,
     skenario_kasus:
-      "Saat mempresentasikan laporan evaluasi program kerja di hadapan pimpinan, salah seorang kepala seksi memotong penjelasan Anda dan menyebut data yang Anda sajikan tidak akurat.",
+      "Saat rapat pimpinan, seorang rekan sejawat menyampaikan kritik tajam di hadapan peserta rapat bahwa data analisis yang Anda susun dinilai tidak akurat. Cara Anda merespon situasi tersebut adalah...",
+    target_level: 3,
     options: [
       {
         label: "A",
-        teks_opsi: "Mendengarkan dengan tenang, mengklarifikasi sumber data dan metodologi yang digunakan secara santun, serta menawarkan rekonsiliasi data bersama setelah sesi paparan.",
+        teks_opsi: "Mendengarkan kritik dengan tenang, mengklarifikasi sumber data dan metodologi analisis secara objektif, serta terbuka melakukan rekonsiliasi data jika ada perbedaan fakta.",
         bobot_nilai: 4,
       },
       {
         label: "B",
-        teks_opsi: "Meminta pimpinan rapat memberikan waktu tambahan untuk membuktikan bahwa data yang Anda sajikan adalah benar.",
+        teks_opsi: "Meminta waktu khusus setelah rapat selesai untuk berdiskusi empat mata dengan rekan tersebut guna menghindari polemik di forum.",
         bobot_nilai: 3,
       },
       {
         label: "C",
-        teks_opsi: "Membalas kritik tersebut dengan langsung menunjuk kelemahan data dari unit kerja kepala seksi yang bersangkutan.",
+        teks_opsi: "Memotong pernyataan rekan tersebut secara langsung untuk mempertahankan integritas data yang telah Anda presentasikan.",
         bobot_nilai: 2,
       },
       {
         label: "D",
-        teks_opsi: "Menjadi defensif dan menghentikan presentasi karena merasa dipermalukan di depan umum.",
+        teks_opsi: "Diam tidak menanggapi kritik tersebut dan membiarkan pimpinan rapat yang mengambil alih kesimpulan.",
         bobot_nilai: 1,
       },
     ],
   },
-
-  // KOMP-04: Orientasi pada Hasil
+  // 4. Orientasi pada Hasil (KOMP-04) - Soal 1
   {
     compKode: "KOMP-04",
     kode_soal: "SJT-OPH-01",
-    target_level: 2,
     skenario_kasus:
-      "Dua hari menjelang tenggat waktu penyerahan dokumen Rencana Kerja Anggaran (RKA), sistem server e-Budgeting pusat mengalami gangguan teknis fatal sehingga input data tertunda.",
+      "Target penyerapan anggaran belanja modal fisik dinas Anda baru mencapai 40% menjelang akhir triwulan ketiga akibat kendala keterlambatan lelang dan cuaca ekstrim di lapangan. Langkah yang Anda ambil adalah...",
+    target_level: 2,
     options: [
       {
         label: "A",
-        teks_opsi: "Segera berkoordinasi dengan tim untuk menginput data secara offline pada template backup, mengawasi status server, dan menjadwalkan shift tim agar siap submit saat sistem pulih.",
+        teks_opsi: "Menyusun kurva penyesuaian jadwal pelaksanaan (rescheduling), menambah shift kerja rekanan di lapangan, dan melakukan monitoring mingguan secara ketat.",
         bobot_nilai: 4,
       },
       {
         label: "B",
-        teks_opsi: "Menghubungi helpdesk pengelola sistem e-Budgeting secara berkala dan menunggu instruksi perpanjangan waktu resmi.",
+        teks_opsi: "Mengajukan revisi pergeseran target anggaran ke triwulan keempat pada perubahan APBD.",
         bobot_nilai: 3,
       },
       {
         label: "C",
-        teks_opsi: "Menyerahkan laporan tertulis kepada atasan bahwa target tidak dapat dipenuhi murni karena kendala sistem pusat.",
+        teks_opsi: "Menyerahkan sepenuhnya kepada pihak kontraktor pelaksana untuk mengejar sisa keterlambatan pekerjaan.",
         bobot_nilai: 2,
       },
       {
         label: "D",
-        teks_opsi: "Menghentikan seluruh aktivitas pengerjaan anggaran sampai sistem benar-benar normal kembali tanpa membuat mitigasi.",
+        teks_opsi: "Membuat nota dinas ke atasan yang menyatakan bahwa target tidak tercapai murni akibat faktor cuaca di luar kendali.",
         bobot_nilai: 1,
       },
     ],
   },
+  // 4. Orientasi pada Hasil (KOMP-04) - Soal 2
   {
     compKode: "KOMP-04",
     kode_soal: "SJT-OPH-02",
-    target_level: 1,
     skenario_kasus:
-      "Anda ditargetkan menyelesaikan verifikasi 100 berkas permohonan kenaikan pangkat dalam 3 hari, padahal rata-rata harian Anda biasanya hanya mampu menyelesaikan 20 berkas.",
+      "Aplikasi sistem kepegawaian baru yang wajib diimplementasikan mengalami gangguan server (down) pada hari terakhir batas pemutakhiran data mandiri ASN. Tindakan paling tepat adalah...",
+    target_level: 3,
     options: [
       {
         label: "A",
-        teks_opsi: "Menganalisis alur kerja untuk mengeliminasi inefisiensi, menetapkan target bertahap per jam, dan bersedia meluangkan waktu ekstra (lembur) demi menjaga ketepatan waktu.",
+        teks_opsi: "Segera berkoordinasi dengan tim teknis TI dinas komunikasi dan informatika untuk penanganan darurat, sekaligus menyiapkan kanal pengumpulan berkas cadangan secara paralel.",
         bobot_nilai: 4,
       },
       {
         label: "B",
-        teks_opsi: "Meminta bantuan rekan kerja yang sedang tidak memiliki beban tugas berat untuk bersama menyelesaikan berkas.",
+        teks_opsi: "Menerbitkan pengumuman perpanjangan waktu pengumpulan data selama dua hari ke depan.",
         bobot_nilai: 3,
       },
       {
         label: "C",
-        teks_opsi: "Mengerjakan verifikasi secara cepat dengan hanya memeriksa kelengkapan sampul berkas tanpa verifikasi substansi.",
+        teks_opsi: "Menunggu hingga server kembali normal tanpa melakukan tindakan kontingensi alternatif.",
         bobot_nilai: 2,
       },
       {
         label: "D",
-        teks_opsi: "Menyampaikan keluhan kepada pimpinan bahwa target yang diberikan tidak manusiawi dan menuntut revisi target.",
+        teks_opsi: "Menyarankan pegawai untuk mencoba terus secara mandiri hingga larut malam.",
         bobot_nilai: 1,
       },
     ],
   },
-
-  // KOMP-05: Pelayanan Publik
+  // 5. Pelayanan Publik (KOMP-05) - Soal 1
   {
     compKode: "KOMP-05",
-    kode_soal: "SJT-PLP-01",
+    kode_soal: "SJT-PP-01",
+    skenario_kasus:
+      "Seorang warga lansia datang ke loket pelayanan administrasi kependudukan tanpa membawa salah satu berkas persyaratan fotokopi dokumen pendukung. Jam pelayanan kantor tersisa 15 menit sebelum tutup. Sikap petugas yang ideal adalah...",
     target_level: 2,
-    skenario_kasus:
-      "Seorang warga lanjut usia datang ke loket pelayanan 10 menit sebelum jam kantor tutup dengan berkas permohonan yang belum lengkap satu syarat administratif penting.",
     options: [
       {
         label: "A",
-        teks_opsi: "Menyambut warga dengan ramah, memverifikasi berkas yang ada, mencatat nomor kontak warga, serta memberikan checklist petunjuk yang jelas cara melengkapi syarat yang kurang.",
+        teks_opsi: "Menyambut ramah, membantu memeriksa kebenaran data pada database sistem, membantu memfotokopikan dokumen jika berkas asli ada, dan memproses permohonan hingga tuntas.",
         bobot_nilai: 4,
       },
       {
         label: "B",
-        teks_opsi: "Memproses berkas seadanya terlebih dahulu dan meminta warga datang kembali besok pagi tepat waktu.",
+        teks_opsi: "Menerima berkas yang ada dan meminta keluarga pemohon untuk menyusulkan kekurangannya pada keesokan harinya.",
         bobot_nilai: 3,
       },
       {
         label: "C",
-        teks_opsi: "Menolak berkas secara tegas karena jam operasional pelayanan akan segera berakhir dan berkas belum lengkap.",
+        teks_opsi: "Menjelaskan aturan secara normatif bahwa berkas tidak lengkap tidak dapat diproses dan meminta datang kembali besok.",
         bobot_nilai: 2,
       },
       {
         label: "D",
-        teks_opsi: "Mengabaikan warga tersebut dan meminta petugas keamanan loket untuk menutup pintu loket.",
+        teks_opsi: "Menolak melayani karena jam operasional kantor sudah hampir berakhir.",
         bobot_nilai: 1,
       },
     ],
   },
+  // 5. Pelayanan Publik (KOMP-05) - Soal 2
   {
     compKode: "KOMP-05",
-    kode_soal: "SJT-PLP-02",
-    target_level: 1,
+    kode_soal: "SJT-PP-02",
     skenario_kasus:
-      "Di ruang tunggu pelayanan masyarakat, terjadi antrean panjang karena sistem antrean elektronik mengalami kerusakan jaringan dan beberapa warga mulai mengeluh serta emosi.",
+      "Terdapat keluhan viral di media sosial mengenai lambatnya proses perizinan di dinas Anda. Analisis internal menunjukkan keterlambatan disebabkan kekurangan personel verifikator. Langkah perbaikan yang semestinya ditempuh adalah...",
+    target_level: 3,
     options: [
       {
         label: "A",
-        teks_opsi: "Segera keluar menemui warga antrean, menyampaikan permohonan maaf atas ketidaknyamanan, membagikan nomor antrean manual, dan memastikan proses berjalan tertib.",
+        teks_opsi: "Merespon keluhan masyarakat dengan empati di media resmi, menyederhanakan SOP meja verifikasi, dan mengalokasikan tenaga bantuan sementara dari seksi lain.",
         bobot_nilai: 4,
       },
       {
         label: "B",
-        teks_opsi: "Fokus memperbaiki sistem koneksi jaringan di ruang server tanpa memberikan penjelasan kepada masyarakat.",
+        teks_opsi: "Membuat klarifikasi resmi bahwa keterlambatan terjadi karena pemohon izin membludak di luar estimasi normal dinas.",
         bobot_nilai: 3,
       },
       {
         label: "C",
-        teks_opsi: "Meminta aparat keamanan untuk menenangkan warga yang membuat keributan di loket.",
+        teks_opsi: "Menghubungi pembuat konten keluhan secara privat dan memprioritaskan izin miliknya terlebih dahulu agar postingan dihapus.",
         bobot_nilai: 2,
       },
       {
         label: "D",
-        teks_opsi: "Menutup sementara tirai loket dan menunggu hingga warga tenang sendiri baru melanjutkan pelayanan.",
+        teks_opsi: "Tidak menanggapi keluhan media sosial karena instansi hanya memproses aduan resmi melalui SP4N-LAPOR.",
         bobot_nilai: 1,
       },
     ],
   },
-
-  // KOMP-06: Pengembangan Diri dan Orang Lain
+  // 6. Pengembangan Diri dan Orang Lain (KOMP-06) - Soal 1
   {
     compKode: "KOMP-06",
     kode_soal: "SJT-PDO-01",
-    target_level: 2,
     skenario_kasus:
-      "Seorang pegawai baru di tim Anda memiliki potensi analisis data yang tinggi namun belum memahami regulasi kepegawaian dan prosedur birokrasi pemerintahan.",
+      "Seorang staf baru di subbagian Anda memiliki potensi kerja baik namun tampak kesulitan mengoperasikan aplikasi pengolah data statistik yang krusial bagi tugas unit. Sikap Anda adalah...",
+    target_level: 2,
     options: [
       {
         label: "A",
-        teks_opsi: "Menyusun agenda mentoring berkala, memberikan referensi regulasi relevan, serta melibatkannya langsung dalam tugas nyata dengan memberikan umpan balik konstruktif.",
+        teks_opsi: "Menyediakan waktu khusus untuk memberikan bimbingan teknis bertahap (mentoring), membagikan modul latihan, dan mengevaluasi kemajuannya secara berkala.",
         bobot_nilai: 4,
       },
       {
         label: "B",
-        teks_opsi: "Mengusulkan nama pegawai baru tersebut kepada pimpinan untuk diikutkan dalam diklat teknis formal kepegawaian.",
+        teks_opsi: "Menyarankan staf tersebut untuk mengikuti kursus mandiri daring di luar jam kerja dinas.",
         bobot_nilai: 3,
       },
       {
         label: "C",
-        teks_opsi: "Hanya memberikan tugas-tugas administratif ringan agar pegawai tersebut tidak melakukan kesalahan birokrasi.",
+        teks_opsi: "Mengambil alih pekerjaan pengolahan data statistik tersebut agar laporan dinas selesai tepat waktu.",
         bobot_nilai: 2,
       },
       {
         label: "D",
-        teks_opsi: "Membiarkan pegawai tersebut belajar mandiri secara otodidak karena setiap ASN dituntut untuk mandiri.",
+        teks_opsi: "Menegur staf tersebut karena dianggap kurang menguasai kompetensi dasar yang dipersyaratkan formasi jabatannya.",
         bobot_nilai: 1,
       },
     ],
   },
+  // 6. Pengembangan Diri dan Orang Lain (KOMP-06) - Soal 2
   {
     compKode: "KOMP-06",
     kode_soal: "SJT-PDO-02",
-    target_level: 1,
     skenario_kasus:
-      "Instansi Anda menawarkan program beasiswa pelatihan sertifikasi keahlian digital secara gratis di luar jam kerja, namun banyak pegawai enggan mendaftar karena merasa sudah nyaman.",
+      "Terdapat peluang pelatihan kepemimpinan dan manajemen proyek bersertifikasi internasional bagi ASN, namun beban tugas operasional rutin Anda sedang sangat padat. Tindakan Anda adalah...",
+    target_level: 3,
     options: [
       {
         label: "A",
-        teks_opsi: "Mendaftarkan diri untuk mengikuti sertifikasi tersebut guna meningkatkan kompetensi pribadi, serta mengajak dan membagikan manfaatnya kepada rekan kerja lain.",
+        teks_opsi: "Mengatur skala prioritas pekerjaan, mendelegasikan sebagian tugas operasional dengan instruksi jelas, dan mendaftar pelatihan demi peningkatan kompetensi jangka panjang organisasi.",
         bobot_nilai: 4,
       },
       {
         label: "B",
-        teks_opsi: "Mendaftar hanya untuk diri sendiri tanpa perlu membujuk rekan kerja lain yang tidak berminat.",
+        teks_opsi: "Meminta izin pimpinan untuk mengikuti sebagian sesi pelatihan yang tidak bertabrakan dengan jadwal kantor.",
         bobot_nilai: 3,
       },
       {
         label: "C",
-        teks_opsi: "Menunggu hingga pelatihan tersebut diwajibkan secara resmi oleh Surat Perintah Kepala Dinas.",
+        teks_opsi: "Menolak kesempatan pelatihan tersebut demi memastikan tugas rutin terselesaikan tanpa hambatan delegasi.",
         bobot_nilai: 2,
       },
       {
         label: "D",
-        teks_opsi: "Tidak berminat mendaftar karena menganggap pelatihan di luar jam kerja mengurangi waktu istirahat.",
+        teks_opsi: "Mendaftar pelatihan hanya untuk menggugurkan kewajiban pengembangan kompetensi minimal 20 JP per tahun tanpa komitmen implementasi hasil.",
         bobot_nilai: 1,
       },
     ],
   },
-
-  // KOMP-07: Mengelola Perubahan
+  // 7. Mengelola Perubahan (KOMP-07) - Soal 1
   {
     compKode: "KOMP-07",
-    kode_soal: "SJT-MPR-01",
-    target_level: 2,
+    kode_soal: "SJT-MP-01",
     skenario_kasus:
-      "Dinas Anda melakukan migrasi penuh dari sistem pengarsipan berkas manual ke Sistem Informasi Kearsipan Dinamis Terintegrasi (SRIKANDI). Beberapa pegawai senior menolak menggunakan sistem baru.",
+      "Pemerintah daerah memberlakukan sistem kerja baru berbasis digital (paperless office) secara menyeluruh. Sebagian besar pegawai senior di ruangan Anda mengeluhkan sistem baru tersebut dan tetap mencetak berkas fisik. Sikap Anda adalah...",
+    target_level: 2,
     options: [
       {
         label: "A",
-        teks_opsi: "Menjadi pelopor penerapan sistem baru, secara proaktif mendampingi dan melatih rekan senior langkah demi langkah dengan sabar hingga mereka lancar mengoperasikannya.",
+        teks_opsi: "Menjadi pelopor penerapan sistem digital, aktif mendampingi rekan senior yang kesulitan, dan mendemonstrasikan efisiensi pengarsipan elektronik.",
         bobot_nilai: 4,
       },
       {
         label: "B",
-        teks_opsi: "Menggunakan aplikasi secara optimal untuk seluruh berkas tanggung jawab Anda sendiri sesuai instruksi pimpinan.",
+        teks_opsi: "Menerapkan sistem digital untuk pekerjaan pribadi namun membiarkan rekan kerja lain tetap menggunakan metode konvensional.",
         bobot_nilai: 3,
       },
       {
         label: "C",
-        teks_opsi: "Mengusulkan kepada pimpinan agar pegawai senior diberi kelonggaran tetap menggunakan sistem manual.",
+        teks_opsi: "Mengikuti kebiasaan mayoritas ruangan untuk tetap mencetak dokumen fisik agar tercipta keharmonisan kerja.",
         bobot_nilai: 2,
       },
       {
         label: "D",
-        teks_opsi: "Ikut mengeluhkan aplikasi baru tersebut di belakang forum karena merasa sistem lama lebih mudah.",
+        teks_opsi: "Mengusulkan kepada pimpinan dinas untuk membatalkan penerapan sistem digital di unit kerja Anda.",
         bobot_nilai: 1,
       },
     ],
   },
+  // 7. Mengelola Perubahan (KOMP-07) - Soal 2
   {
     compKode: "KOMP-07",
-    kode_soal: "SJT-MPR-02",
-    target_level: 1,
+    kode_soal: "SJT-MP-02",
     skenario_kasus:
-      "Terjadi restrukturisasi organisasi secara mendadak yang memindahkan Anda ke unit kerja baru dengan tugas dan fungsi yang sama sekali berbeda dari kebiasaan Anda selama ini.",
+      "Akibat penataan kelembagaan SOTK baru, unit kerja Anda digabung dengan seksi lain dan beberapa fungsi tugas dihapuskan. Muncul kecemasan di kalangan staf terkait ketidakpastian uraian tugas harian. Respon Anda adalah...",
+    target_level: 3,
     options: [
       {
         label: "A",
-        teks_opsi: "Menerima penugasan baru dengan sikap positif, segera mempelajari SOP dan regulasi tugas baru, serta beradaptasi cepat dengan budaya kerja tim baru.",
+        teks_opsi: "Cepat beradaptasi, memetakan kembali matriks pembagian peran baru secara proaktif bersama rekan seksi gabungan, dan menjaga optimisme tim dalam transisi.",
         bobot_nilai: 4,
       },
       {
         label: "B",
-        teks_opsi: "Menerima mutasi tersebut namun meminta waktu adaptasi yang panjang sebelum diberikan beban kerja utama.",
+        teks_opsi: "Menunggu instruksi resmi petunjuk teknis tertulis dari bagian organisasi sebelum memulai aktivitas pekerjaan baru.",
         bobot_nilai: 3,
       },
       {
         label: "C",
-        teks_opsi: "Menghubungi bagian kepegawaian untuk meminta pertimbangan agar bisa dikembalikan ke unit kerja lama.",
+        teks_opsi: "Menyampaikan keluhan secara terbuka dalam rapat evaluasi bahwa restrukturisasi mengganggu kinerja yang telah mapan.",
         bobot_nilai: 2,
       },
       {
         label: "D",
-        teks_opsi: "Bekerja seadanya di unit kerja baru sebagai wujud ketidakpuasan atas kebijakan mutasi sepihak.",
+        teks_opsi: "Mengajukan mutasi pindah ke dinas lain yang struktur organisasinya tidak mengalami perubahan.",
         bobot_nilai: 1,
       },
     ],
   },
-
-  // KOMP-08: Pengambilan Keputusan
+  // 8. Pengambilan Keputusan (KOMP-08) - Soal 1
   {
     compKode: "KOMP-08",
-    kode_soal: "SJT-PKP-01",
-    target_level: 2,
+    kode_soal: "SJT-PK-01",
     skenario_kasus:
-      "Dalam penyaluran bantuan sosial bencana darurat, Anda menemukan bahwa kriteria penerima dalam petunjuk teknis belum mencakup warga korban terdampak di satu dusun yang kondisinya sangat kritis.",
+      "Dalam situasi tanggap darurat bencana tanah longsor di wilayah binaan, Anda dihadapkan pada kebutuhan pengadaan tenda pengungsian mendesak, sementara pejabat pembuat komitmen sedang bertugas di luar pulau dan koneksi komunikasi terputus. Tindakan yang paling tepat adalah...",
+    target_level: 2,
     options: [
       {
         label: "A",
-        teks_opsi: "Mengumpulkan data faktual dan dokumentasi lapangan, segera berkoordinasi darurat dengan atasan dan tim hukum untuk diskresi legal yang sah agar bantuan segera tersalurkan.",
+        teks_opsi: "Mengambil diskresi tindakan kedaruratan berpedoman pada regulasi penanggulangan bencana, mendokumentasikan fakta situasi di lapangan, dan segera melaporkannya ke pimpinan begitu jalur komunikasi terbuka.",
         bobot_nilai: 4,
       },
       {
         label: "B",
-        teks_opsi: "Menunggu hingga ada revisi petunjuk teknis resmi dari kementerian terkait sebelum mengambil tindakan apapun.",
+        teks_opsi: "Mengadakan tenda secara mandiri menggunakan dana pribadi dan menuntut penggantian biaya kemudian hari.",
         bobot_nilai: 3,
       },
       {
         label: "C",
-        teks_opsi: "Langsung membagikan bantuan tanpa izin dan tanpa pencatatan pertanggungjawaban administratif.",
+        teks_opsi: "Menunggu hingga pejabat definitif dapat dihubungi agar tidak menyalahi aturan wewenang keuangan.",
         bobot_nilai: 2,
       },
       {
         label: "D",
-        teks_opsi: "Mengabaikan warga dusun tersebut karena berpedoman kaku bahwa mereka tidak tercantum dalam daftar resmi.",
+        teks_opsi: "Mengalihkan tanggung jawab penanganan kepada instansi relawan non-pemerintah.",
         bobot_nilai: 1,
       },
     ],
   },
+  // 8. Pengambilan Keputusan (KOMP-08) - Soal 2
   {
     compKode: "KOMP-08",
-    kode_soal: "SJT-PKP-02",
-    target_level: 1,
+    kode_soal: "SJT-PK-02",
     skenario_kasus:
-      "Anda dihadapkan pada dua pilihan vendor penyedia perangkat IT: Vendor A memiliki harga termurah namun reputasi purna jual kurang teruji, sedangkan Vendor B sedikit lebih mahal namun memiliki jaminan garansi resmi dan reputasi prima.",
+      "Terdapat dua alternatif kebijakan penanganan pedagang kaki lima di kawasan cagar budaya: merelokasi ke pasar baru (didukung pemilik toko namun ditolak pedagang) atau menata zonasi waktu (didukung pedagang namun dikhawatirkan mengganggu lalu lintas). Cara Anda memutuskannya adalah...",
+    target_level: 3,
     options: [
       {
         label: "A",
-        teks_opsi: "Melakukan analisis komprehensif *Total Cost of Ownership* (biaya pengadaan + pemeliharaan jangka panjang), dan merekomendasikan pilihan yang paling menguntungkan negara dan berkelanjutan.",
+        teks_opsi: "Menganalisis data dampak ekonomi-sosial secara komprehensif, melibatkan perwakilan kedua pihak dalam FGD terarah, dan menetapkan skema zonasi adaptif dengan pengawasan satpol PP terjadwal.",
         bobot_nilai: 4,
       },
       {
         label: "B",
-        teks_opsi: "Memilih Vendor A semata-mata karena harganya paling murah agar terhindar dari tuduhan pemborosan anggaran.",
+        teks_opsi: "Memilih opsi relokasi penuh karena dinilai lebih memberikan kepastian tata ruang perkotaan jangka panjang.",
         bobot_nilai: 3,
       },
       {
         label: "C",
-        teks_opsi: "Menyerahkan seluruh keputusan kepada atasan tanpa memberikan analisis perbandingan yang memadai.",
+        teks_opsi: "Menunda keputusan dan menyerahkan penetapan alternatif kepada pimpinan daerah tertinggi (Bupati/Walikota).",
         bobot_nilai: 2,
       },
       {
         label: "D",
-        teks_opsi: "Memilih vendor berdasarkan kedekatan relasi pribadi dengan pemilik perusahaan penyedia.",
+        teks_opsi: "Memilih opsi yang paling sedikit mendapatkan sorotan negatif dari media massa lokal.",
         bobot_nilai: 1,
       },
     ],
   },
-
-  // KOMP-09: Perekat Bangsa
+  // 9. Perekat Bangsa (KOMP-09) - Soal 1
   {
     compKode: "KOMP-09",
-    kode_soal: "SJT-PKB-01",
+    kode_soal: "SJT-PB-01",
+    skenario_kasus:
+      "Di lingkungan kantor Anda terjadi ketegangan antarpegawai akibat unggahan bernuansa SARA oleh salah seorang ASN di grup percakapan internal menjelang kontestasi Pilkada daerah. Tindakan Anda sebagai sesama ASN adalah...",
     target_level: 2,
-    skenario_kasus:
-      "Di lingkungan kantor Anda, terjadi gesekan antarpegawai yang dipicu oleh candaan bernada stereotip suku dan agama di ruang istirahat pegawai, yang berpotensi memecah belah keharmonisan kerja.",
     options: [
       {
         label: "A",
-        teks_opsi: "Mengambil tindakan tegas menegur perilaku tersebut secara persuasif, mengingatkan komitmen ASN sebagai pemersatu bangsa, dan menginisiasi ruang dialog yang inklusif untuk meredakan ketegangan.",
+        teks_opsi: "Mengingatkan dengan tegas di grup tentang asas netralitas ASN dan etika bermedia sosial, mengajak rekan-rekan meredakan perdebatan, serta melaporkan ke pembina kepegawaian jika terus berlanjut.",
         bobot_nilai: 4,
       },
       {
         label: "B",
-        teks_opsi: "Menghindari ruang istirahat tersebut agar tidak terlibat dalam perselisihan antar rekan kerja.",
+        teks_opsi: "Menegur pengunggah konten secara privat agar menghapus postingan tersebut demi menghindari kegaduhan.",
         bobot_nilai: 3,
       },
       {
         label: "C",
-        teks_opsi: "Membela rekan kerja yang berasal dari daerah atau suku yang sama dengan Anda.",
+        teks_opsi: "Memilih keluar dari grup percakapan kantor agar tidak terlibat dalam polemik politik.",
         bobot_nilai: 2,
       },
       {
         label: "D",
-        teks_opsi: "Ikut menertawakan lelucon stereotip tersebut karena menganggap itu hal biasa yang tidak perlu dibesar-besarkan.",
+        teks_opsi: "Mendukung salah satu pihak yang pendapatnya menurut Anda lebih rasional dan dapat dipertanggungjawabkan.",
         bobot_nilai: 1,
       },
     ],
   },
+  // 9. Perekat Bangsa (KOMP-09) - Soal 2
   {
     compKode: "KOMP-09",
-    kode_soal: "SJT-PKB-02",
-    target_level: 1,
+    kode_soal: "SJT-PB-02",
     skenario_kasus:
-      "Dalam penyelenggaraan perayaan hari besar keagamaan di instansi, Anda diminta memimpin kepanitiaan bersama rekan kerja dari berbagai latar belakang keyakinan dan etnis.",
+      "Anda ditunjuk sebagai ketua panitia peringatan Hari Kemerdekaan RI tingkat dinas. Terdapat usulan perayaan kebudayaan daerah yang beragam, namun sebagian anggota kelompok minoritas merasa tradisinya kurang terwakili dalam susunan acara. Respon Anda adalah...",
+    target_level: 3,
     options: [
       {
         label: "A",
-        teks_opsi: "Menjalankan kepanitiaan dengan prinsip keterbukaan, menghargai keberagaman tradisi dan keyakinan, serta memastikan setiap anggota merasa dihargai dan terlibat aktif secara harmonis.",
+        teks_opsi: "Mengakomodasi perwakilan seluruh unsur etnis/budaya yang ada di kantor, menyusun pawai kebinekaan bersama, dan menjadikan keberagaman sebagai tema sentral persatuan.",
         bobot_nilai: 4,
       },
       {
         label: "B",
-        teks_opsi: "Melaksanakan tugas kepanitiaan secara formalistis tanpa membangun interaksi mendalam antar anggota tim yang berbeda latar belakang.",
+        teks_opsi: "Menyelenggarakan kegiatan perayaan yang bersifat netral seperti lomba olahraga tanpa menampilkan unsur budaya tertentu.",
         bobot_nilai: 3,
       },
       {
@@ -629,7 +666,7 @@ export const initialUsers = [
     jabatan: "Analis Kepegawaian Ahli Madya / Asesor SDM Aparatur",
     instansi: "Badan Kepegawaian Daerah",
     unit_kerja: "Bidang Penilaian Kinerja dan Asesmen ASN",
-    jenjang_jabatan: "ADMINISTRATOR" as const,
+    kode_jenjang: "ADMINISTRATOR",
   },
   {
     nip: "199505122020121002",
@@ -639,7 +676,7 @@ export const initialUsers = [
     jabatan: "Pranata Komputer Ahli Pertama",
     instansi: "Dinas Komunikasi dan Informatika",
     unit_kerja: "Seksi Infrastruktur dan Jaringan",
-    jenjang_jabatan: "PELAKSANA" as const,
+    kode_jenjang: "PELAKSANA",
   },
   {
     nip: "198808172014032003",
@@ -649,7 +686,7 @@ export const initialUsers = [
     jabatan: "Kepala Sub Bagian Kepegawaian dan Umum",
     instansi: "Dinas Pendidikan dan Kebudayaan",
     unit_kerja: "Sekretariat Dinas",
-    jenjang_jabatan: "PENGAWAS" as const,
+    kode_jenjang: "PENGAWAS",
   },
   {
     nip: "197903252005011004",
@@ -659,7 +696,7 @@ export const initialUsers = [
     jabatan: "Kepala Bidang Pelayanan Perizinan",
     instansi: "Dinas Penanaman Modal dan PTSP",
     unit_kerja: "Bidang Perizinan dan Non Perizinan",
-    jenjang_jabatan: "ADMINISTRATOR" as const,
+    kode_jenjang: "ADMINISTRATOR",
   },
 ];
 
@@ -670,9 +707,10 @@ export async function seedDatabase() {
   console.log("  → Mengisi 9 Dimensi Kompetensi PermenPANRB...");
   for (const comp of initialCompetencies) {
     const existing = await db
-      .select()
+      .select({ id: competencies.id })
       .from(competencies)
-      .where(eq(competencies.kode, comp.kode));
+      .where(eq(competencies.kode, comp.kode))
+      .limit(1);
 
     if (existing.length === 0) {
       await db.insert(competencies).values(comp);
@@ -688,16 +726,119 @@ export async function seedDatabase() {
   const allComps = await db.select().from(competencies);
   const compMap = new Map(allComps.map((c) => [c.kode, c.id]));
 
-  // 2. Seed Questions & Options
+  // 2. Seed Kamus ASN: Jenjang Jabatan, Standar Level, Level Descriptions, Indikator Perilaku
+  console.log("  → Mengisi Kamus ASN: 14 Jenjang Jabatan & Matriks Standar Level...");
+  const excelPath = getExcelPath();
+  const parsedKamus = parseKamusKompetensiExcel(excelPath);
+
+  // 2a. Jenjang Jabatan (14 Jenjang)
+  for (const j of parsedKamus.jenjangList) {
+    const existingJ = await db
+      .select({ id: jenjangJabatan.id })
+      .from(jenjangJabatan)
+      .where(eq(jenjangJabatan.kode, j.kode))
+      .limit(1);
+
+    if (existingJ.length === 0) {
+      await db.insert(jenjangJabatan).values(j);
+    } else {
+      await db
+        .update(jenjangJabatan)
+        .set(j)
+        .where(eq(jenjangJabatan.kode, j.kode));
+    }
+  }
+
+  const allJenjang = await db.select().from(jenjangJabatan);
+  const jenjangMap = new Map(allJenjang.map((j) => [j.kode, j.id]));
+
+  // 2b. Standar Kompetensi Jabatan (126 Matriks)
+  const existingStandards = await db.select({ id: standarKompetensiJabatan.id }).from(standarKompetensiJabatan);
+  if (existingStandards.length < 126) {
+    if (existingStandards.length > 0) {
+      await db.delete(standarKompetensiJabatan);
+    }
+    const standardValues = [];
+    for (const s of parsedKamus.standarList) {
+      const jenjangId = jenjangMap.get(s.kode_jenjang);
+      const kompKode = KODE_TO_KOMP_MAP[s.kode_kompetensi];
+      const compId = kompKode ? compMap.get(kompKode) : undefined;
+      if (jenjangId && compId) {
+        standardValues.push({
+          jenjang_jabatan_id: jenjangId,
+          competency_id: compId,
+          target_level: s.target_level,
+        });
+      }
+    }
+    if (standardValues.length > 0) {
+      await db.insert(standarKompetensiJabatan).values(standardValues);
+    }
+  }
+
+  // 2c. Competency Levels (45 Level)
+  const existingLevels = await db.select({ id: competencyLevels.id }).from(competencyLevels);
+  if (existingLevels.length < 45) {
+    // Delete dependent indicators first to avoid FK constraint issues
+    await db.delete(competencyIndicators);
+    await db.delete(competencyLevels);
+
+    const levelValues = [];
+    for (const l of parsedKamus.levelDescriptions) {
+      const kompKode = KODE_TO_KOMP_MAP[l.kode_kompetensi];
+      const compId = kompKode ? compMap.get(kompKode) : undefined;
+      if (compId) {
+        levelValues.push({
+          competency_id: compId,
+          level: l.level,
+          nama_level: l.nama_level,
+          deskripsi: l.deskripsi,
+        });
+      }
+    }
+    if (levelValues.length > 0) {
+      await db.insert(competencyLevels).values(levelValues);
+    }
+  }
+
+  // 2d. Competency Indicators (135 Indikator Perilaku)
+  const existingIndicators = await db.select({ id: competencyIndicators.id }).from(competencyIndicators);
+  if (existingIndicators.length < 135) {
+    if (existingIndicators.length > 0) {
+      await db.delete(competencyIndicators);
+    }
+    const allLevels = await db.select().from(competencyLevels);
+    const levelsMap = new Map(allLevels.map((l) => [`${l.competency_id}_${l.level}`, l.id]));
+
+    const indicatorValues = [];
+    for (const ind of parsedKamus.indicators) {
+      const kompKode = KODE_TO_KOMP_MAP[ind.kode_kompetensi];
+      const compId = kompKode ? compMap.get(kompKode) : undefined;
+      const levelId = compId ? levelsMap.get(`${compId}_${ind.level}`) : undefined;
+      if (levelId) {
+        indicatorValues.push({
+          competency_level_id: levelId,
+          nomor_indikator: ind.nomor_indikator,
+          deskripsi_indikator: ind.deskripsi_indikator,
+        });
+      }
+    }
+    if (indicatorValues.length > 0) {
+      await db.insert(competencyIndicators).values(indicatorValues);
+    }
+  }
+
+  // 3. Seed Questions & Options
   console.log("  → Mengisi Bank Soal Situational Judgment Test (SJT)...");
   for (const q of initialQuestions) {
     const compId = compMap.get(q.compKode);
     if (!compId) continue;
 
     const existingQ = await db
-      .select()
+      .select({ id: questions.id })
       .from(questions)
-      .where(eq(questions.kode_soal, q.kode_soal));
+      .where(eq(questions.kode_soal, q.kode_soal))
+      .limit(1);
 
     let questionId: number;
 
@@ -725,7 +866,7 @@ export async function seedDatabase() {
     // Insert or update 4 options
     for (const opt of q.options) {
       const existingOptions = await db
-        .select()
+        .select({ id: questionOptions.id, label: questionOptions.label })
         .from(questionOptions)
         .where(eq(questionOptions.question_id, questionId));
 
@@ -750,28 +891,36 @@ export async function seedDatabase() {
     }
   }
 
-  // 3. Seed Demo Users
+  // 4. Seed Demo Users
   console.log("  → Mengisi Akun Demo Admin & Peserta ASN...");
   const hashedPassword = await bcrypt.hash("password123", 10);
 
   for (const u of initialUsers) {
+    const jenjangId = jenjangMap.get(u.kode_jenjang) || null;
     const existingUser = await db
-      .select()
+      .select({ id: users.id })
       .from(users)
-      .where(eq(users.nip, u.nip));
+      .where(eq(users.nip, u.nip))
+      .limit(1);
+
+    const userData = {
+      nip: u.nip,
+      nama: u.nama,
+      email: u.email,
+      role: u.role,
+      jabatan: u.jabatan,
+      instansi: u.instansi,
+      unit_kerja: u.unit_kerja,
+      jenjang_jabatan_id: jenjangId,
+      password_hash: hashedPassword,
+    };
 
     if (existingUser.length === 0) {
-      await db.insert(users).values({
-        ...u,
-        password_hash: hashedPassword,
-      });
+      await db.insert(users).values(userData);
     } else {
       await db
         .update(users)
-        .set({
-          ...u,
-          password_hash: hashedPassword,
-        })
+        .set(userData)
         .where(eq(users.nip, u.nip));
     }
   }

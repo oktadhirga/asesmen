@@ -2,8 +2,8 @@ import { describe, it, expect } from "bun:test";
 import * as schema from "../../src/db/schema";
 import { getTableColumns } from "drizzle-orm";
 
-describe("Database Schema Definitions (TDD Tahap 1)", () => {
-  it("should export all 7 required tables", () => {
+describe("Database Schema Definitions (TDD Tahap 1 & Tahap 14.1)", () => {
+  it("should export all 11 required tables (7 inti + 4 master kamus ASN)", () => {
     expect(schema.users).toBeDefined();
     expect(schema.competencies).toBeDefined();
     expect(schema.questions).toBeDefined();
@@ -11,9 +11,14 @@ describe("Database Schema Definitions (TDD Tahap 1)", () => {
     expect(schema.assessmentSessions).toBeDefined();
     expect(schema.sessionParticipants).toBeDefined();
     expect(schema.participantAnswers).toBeDefined();
+    // 4 tabel master kamus ASN PermenPANRB No. 38 Tahun 2017
+    expect(schema.jenjangJabatan).toBeDefined();
+    expect(schema.standarKompetensiJabatan).toBeDefined();
+    expect(schema.competencyLevels).toBeDefined();
+    expect(schema.competencyIndicators).toBeDefined();
   });
 
-  it("users table should have correct columns and constraints", () => {
+  it("users table should have correct columns and constraints with jenjang_jabatan_id FK", () => {
     const cols = getTableColumns(schema.users);
     expect(cols.id).toBeDefined();
     expect(cols.nip).toBeDefined();
@@ -24,7 +29,8 @@ describe("Database Schema Definitions (TDD Tahap 1)", () => {
     expect(cols.jabatan).toBeDefined();
     expect(cols.instansi).toBeDefined();
     expect(cols.unit_kerja).toBeDefined();
-    expect(cols.jenjang_jabatan).toBeDefined();
+    expect(cols.jenjang_jabatan_id).toBeDefined();
+    expect((cols as any).jenjang_jabatan).toBeUndefined();
     expect(cols.created_at).toBeDefined();
   });
 
@@ -56,7 +62,7 @@ describe("Database Schema Definitions (TDD Tahap 1)", () => {
     expect(cols.bobot_nilai).toBeDefined();
   });
 
-  it("assessment_sessions should have status enum and duration", () => {
+  it("assessment_sessions should have status enum, duration, and target_jenjang_id FK", () => {
     const cols = getTableColumns(schema.assessmentSessions);
     expect(cols.id).toBeDefined();
     expect(cols.judul).toBeDefined();
@@ -64,7 +70,8 @@ describe("Database Schema Definitions (TDD Tahap 1)", () => {
     expect(cols.waktu_mulai).toBeDefined();
     expect(cols.waktu_selesai).toBeDefined();
     expect(cols.durasi_menit).toBeDefined();
-    expect(cols.target_jenjang).toBeDefined();
+    expect(cols.target_jenjang_id).toBeDefined();
+    expect((cols as any).target_jenjang).toBeUndefined();
     expect(cols.status).toBeDefined();
   });
 
@@ -90,5 +97,39 @@ describe("Database Schema Definitions (TDD Tahap 1)", () => {
     expect(cols.bobot_diperoleh).toBeDefined();
     expect(cols.is_ragu).toBeDefined();
     expect(cols.updated_at).toBeDefined();
+  });
+
+  it("tabel jenjang_jabatan harus memiliki kolom id, kode, nama, kelompok_jabatan, level_standar_umum", () => {
+    const cols = getTableColumns(schema.jenjangJabatan);
+    expect(cols.id).toBeDefined();
+    expect(cols.kode).toBeDefined();
+    expect(cols.nama).toBeDefined();
+    expect(cols.kelompok_jabatan).toBeDefined();
+    expect(cols.level_standar_umum).toBeDefined();
+  });
+
+  it("tabel standar_kompetensi_jabatan harus memiliki foreign key jenjang_jabatan_id, competency_id, dan target_level", () => {
+    const cols = getTableColumns(schema.standarKompetensiJabatan);
+    expect(cols.id).toBeDefined();
+    expect(cols.jenjang_jabatan_id).toBeDefined();
+    expect(cols.competency_id).toBeDefined();
+    expect(cols.target_level).toBeDefined();
+  });
+
+  it("competency_levels table should have competency_id, level, nama_level, deskripsi", () => {
+    const cols = getTableColumns(schema.competencyLevels);
+    expect(cols.id).toBeDefined();
+    expect(cols.competency_id).toBeDefined();
+    expect(cols.level).toBeDefined();
+    expect(cols.nama_level).toBeDefined();
+    expect(cols.deskripsi).toBeDefined();
+  });
+
+  it("competency_indicators table should have competency_level_id, nomor_indikator, deskripsi_indikator", () => {
+    const cols = getTableColumns(schema.competencyIndicators);
+    expect(cols.id).toBeDefined();
+    expect(cols.competency_level_id).toBeDefined();
+    expect(cols.nomor_indikator).toBeDefined();
+    expect(cols.deskripsi_indikator).toBeDefined();
   });
 });

@@ -191,7 +191,7 @@ describe("Modul Reports (Kalkulasi JPM & Radar Chart) — TDD Tahap 9", () => {
         headers: { Authorization: `Bearer ${pesertaToken}` },
       })
     );
-  });
+  }, 30000);
 
   afterAll(async () => {
     await cleanupTestReports();

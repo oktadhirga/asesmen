@@ -4,6 +4,7 @@ import {
   sessionParticipants,
   participantAnswers,
   users,
+  jenjangJabatan,
 } from "../../db/schema";
 import { eq, and, or, like, sql, inArray, SQL } from "drizzle-orm";
 import { sanitizeUser } from "../auth/auth.service";
@@ -15,7 +16,8 @@ export interface CreateSessionData {
   waktu_mulai: string | Date;
   waktu_selesai: string | Date;
   durasi_menit?: number;
-  target_jenjang?: "PELAKSANA" | "PENGAWAS" | "ADMINISTRATOR" | "JPT" | null;
+  target_jenjang?: string | null;
+  target_jenjang_id?: number | null;
 }
 
 export interface UpdateSessionData {
@@ -25,7 +27,8 @@ export interface UpdateSessionData {
   waktu_mulai?: string | Date;
   waktu_selesai?: string | Date;
   durasi_menit?: number;
-  target_jenjang?: "PELAKSANA" | "PENGAWAS" | "ADMINISTRATOR" | "JPT" | null;
+  target_jenjang?: string | null;
+  target_jenjang_id?: number | null;
   status?: "DRAFT" | "BERJALAN" | "SELESAI";
 }
 
@@ -33,7 +36,8 @@ export interface ListSessionsParams {
   page?: number;
   limit?: number;
   status?: "DRAFT" | "BERJALAN" | "SELESAI";
-  target_jenjang?: "PELAKSANA" | "PENGAWAS" | "ADMINISTRATOR" | "JPT";
+  target_jenjang?: string;
+  target_jenjang_id?: number;
   search?: string;
 }
 
@@ -51,6 +55,21 @@ export class SessionsService {
   }
 
   /**
+   * Helper resolusi jenjang_jabatan_id dari string kode atau integer
+   */
+  static async resolveJenjangId(val: string | number | null | undefined): Promise<number | null> {
+    if (!val) return null;
+    if (typeof val === "number") return val;
+    if (/^\d+$/.test(val)) return parseInt(val, 10);
+    const found = await db
+      .select({ id: jenjangJabatan.id })
+      .from(jenjangJabatan)
+      .where(eq(jenjangJabatan.kode, val.toUpperCase()))
+      .limit(1);
+    return found[0]?.id || null;
+  }
+
+  /**
    * Mengambil daftar sesi asesmen terpaginasi beserta jumlah peserta
    */
   static async listSessions(params: ListSessionsParams = {}) {
@@ -64,10 +83,13 @@ export class SessionsService {
       conditions.push(eq(assessmentSessions.status, params.status));
     }
 
-    if (params.target_jenjang) {
-      conditions.push(
-        eq(assessmentSessions.target_jenjang, params.target_jenjang)
-      );
+    if (params.target_jenjang_id) {
+      conditions.push(eq(assessmentSessions.target_jenjang_id, Number(params.target_jenjang_id)));
+    } else if (params.target_jenjang) {
+      const resolvedId = await this.resolveJenjangId(params.target_jenjang);
+      if (resolvedId) {
+        conditions.push(eq(assessmentSessions.target_jenjang_id, resolvedId));
+      }
     }
 
     if (params.search && params.search.trim() !== "") {
@@ -91,12 +113,25 @@ export class SessionsService {
 
     // 2. Ambil data sesi
     const sessionRows = await db
-      .select()
+      .select({
+        id: assessmentSessions.id,
+        judul: assessmentSessions.judul,
+        deskripsi: assessmentSessions.deskripsi,
+        kode_sesi: assessmentSessions.kode_sesi,
+        waktu_mulai: assessmentSessions.waktu_mulai,
+        waktu_selesai: assessmentSessions.waktu_selesai,
+        durasi_menit: assessmentSessions.durasi_menit,
+        status: assessmentSessions.status,
+        target_jenjang_id: assessmentSessions.target_jenjang_id,
+        target_jenjang: jenjangJabatan.kode,
+        target_jenjang_nama: jenjangJabatan.nama,
+      })
       .from(assessmentSessions)
+      .leftJoin(jenjangJabatan, eq(assessmentSessions.target_jenjang_id, jenjangJabatan.id))
       .where(whereClause)
       .limit(limit)
       .offset(offset)
-      .orderBy(sql`${assessmentSessions.id} DESC`);
+      .orderBy(sql`${assessmentSessions.id} desc`);
 
     // 3. Hitung jumlah peserta per sesi
     const sessionIds = sessionRows.map((s) => s.id);
@@ -140,8 +175,21 @@ export class SessionsService {
    */
   static async getSessionById(id: number) {
     const found = await db
-      .select()
+      .select({
+        id: assessmentSessions.id,
+        judul: assessmentSessions.judul,
+        deskripsi: assessmentSessions.deskripsi,
+        kode_sesi: assessmentSessions.kode_sesi,
+        waktu_mulai: assessmentSessions.waktu_mulai,
+        waktu_selesai: assessmentSessions.waktu_selesai,
+        durasi_menit: assessmentSessions.durasi_menit,
+        status: assessmentSessions.status,
+        target_jenjang_id: assessmentSessions.target_jenjang_id,
+        target_jenjang: jenjangJabatan.kode,
+        target_jenjang_nama: jenjangJabatan.nama,
+      })
       .from(assessmentSessions)
+      .leftJoin(jenjangJabatan, eq(assessmentSessions.target_jenjang_id, jenjangJabatan.id))
       .where(eq(assessmentSessions.id, id))
       .limit(1);
 
@@ -159,17 +207,17 @@ export class SessionsService {
   }
 
   /**
-   * Membuat sesi asesmen baru
+   * Membuat sesi asesmen baru (default status: DRAFT)
    */
   static async createSession(data: CreateSessionData) {
     // 1. Cek keunikan kode_sesi
-    const existing = await db
+    const existingCode = await db
       .select({ id: assessmentSessions.id })
       .from(assessmentSessions)
-      .where(eq(assessmentSessions.kode_sesi, data.kode_sesi.trim()))
+      .where(eq(assessmentSessions.kode_sesi, data.kode_sesi.trim().toUpperCase()))
       .limit(1);
 
-    if (existing.length > 0) {
+    if (existingCode.length > 0) {
       throw new Error(`Kode sesi sudah terdaftar: ${data.kode_sesi}`);
     }
 
@@ -185,6 +233,10 @@ export class SessionsService {
       throw new Error("Waktu selesai harus setelah waktu mulai.");
     }
 
+    const jenjangId = await this.resolveJenjangId(
+      data.target_jenjang_id ?? data.target_jenjang ?? "PELAKSANA"
+    );
+
     // 3. Insert ke database
     const [inserted] = await db.insert(assessmentSessions).values({
       judul: data.judul.trim(),
@@ -193,7 +245,7 @@ export class SessionsService {
       waktu_mulai: startTime,
       waktu_selesai: endTime,
       durasi_menit: data.durasi_menit || 60,
-      target_jenjang: data.target_jenjang || "PELAKSANA",
+      target_jenjang_id: jenjangId,
       status: "DRAFT",
     });
 
@@ -228,24 +280,39 @@ export class SessionsService {
     if (data.judul !== undefined) updatePayload.judul = data.judul.trim();
     if (data.deskripsi !== undefined) updatePayload.deskripsi = data.deskripsi?.trim() || null;
     if (data.kode_sesi !== undefined) updatePayload.kode_sesi = data.kode_sesi.trim().toUpperCase();
-    if (data.durasi_menit !== undefined) updatePayload.durasi_menit = Number(data.durasi_menit);
-    if (data.target_jenjang !== undefined) updatePayload.target_jenjang = data.target_jenjang;
-    if (data.status !== undefined) updatePayload.status = data.status;
 
     if (data.waktu_mulai !== undefined) {
-      updatePayload.waktu_mulai = new Date(data.waktu_mulai);
+      const start = new Date(data.waktu_mulai);
+      if (isNaN(start.getTime())) throw new Error("Format waktu mulai tidak valid.");
+      updatePayload.waktu_mulai = start;
     }
 
     if (data.waktu_selesai !== undefined) {
-      updatePayload.waktu_selesai = new Date(data.waktu_selesai);
+      const end = new Date(data.waktu_selesai);
+      if (isNaN(end.getTime())) throw new Error("Format waktu selesai tidak valid.");
+      updatePayload.waktu_selesai = end;
     }
 
-    // Validasi rentang waktu jika keduanya atau salah satu diperbarui
+    // Validasi rentang waktu jika keduanya diperbarui atau ada yang baru
     const finalStart = updatePayload.waktu_mulai || existing.waktu_mulai;
     const finalEnd = updatePayload.waktu_selesai || existing.waktu_selesai;
-
     if (new Date(finalEnd).getTime() <= new Date(finalStart).getTime()) {
       throw new Error("Waktu selesai harus setelah waktu mulai.");
+    }
+
+    if (data.durasi_menit !== undefined) {
+      if (data.durasi_menit <= 0) throw new Error("Durasi sesi minimal 1 menit.");
+      updatePayload.durasi_menit = data.durasi_menit;
+    }
+
+    if (data.target_jenjang_id !== undefined || data.target_jenjang !== undefined) {
+      updatePayload.target_jenjang_id = await this.resolveJenjangId(
+        data.target_jenjang_id ?? data.target_jenjang
+      );
+    }
+
+    if (data.status !== undefined) {
+      updatePayload.status = data.status;
     }
 
     await db
@@ -298,8 +365,8 @@ export class SessionsService {
 
     for (const userId of userIds) {
       // Cek apakah sudah terdaftar
-      const existingPart = await db
-        .select({ id: sessionParticipants.id })
+      const existing = await db
+        .select()
         .from(sessionParticipants)
         .where(
           and(
@@ -309,26 +376,38 @@ export class SessionsService {
         )
         .limit(1);
 
-      if (existingPart.length > 0) {
-        throw new Error(
-          `Peserta dengan ID ${userId} sudah terdaftar dalam sesi ini.`
-        );
+      if (existing.length > 0) {
+        throw new Error(`Peserta dengan user_id ${userId} sudah terdaftar pada sesi ini.`);
       }
 
-      const tokenAkses = this.generateTokenAkses();
+      // Pastikan token unik
+      let token = this.generateTokenAkses();
+      let isTokenDuplicate = true;
+      while (isTokenDuplicate) {
+        const check = await db
+          .select({ id: sessionParticipants.id })
+          .from(sessionParticipants)
+          .where(eq(sessionParticipants.token_akses, token))
+          .limit(1);
+        if (check.length === 0) {
+          isTokenDuplicate = false;
+        } else {
+          token = this.generateTokenAkses();
+        }
+      }
 
-      const [inserted] = await db.insert(sessionParticipants).values({
+      const [res] = await db.insert(sessionParticipants).values({
         session_id: sessionId,
         user_id: userId,
-        token_akses: tokenAkses,
+        token_akses: token,
         status: "TERDAFTAR",
       });
 
       registeredResults.push({
-        id: Number(inserted.insertId),
+        id: Number(res.insertId),
         session_id: sessionId,
         user_id: userId,
-        token_akses: tokenAkses,
+        token_akses: token,
         status: "TERDAFTAR",
       });
     }
@@ -337,10 +416,10 @@ export class SessionsService {
   }
 
   /**
-   * Mengambil daftar peserta yang terdaftar pada satu sesi
+   * Mengambil daftar peserta yang terdaftar pada suatu sesi
    */
   static async getParticipantsBySessionId(sessionId: number) {
-    const rows = await db
+    return await db
       .select({
         id: sessionParticipants.id,
         session_id: sessionParticipants.session_id,
@@ -358,27 +437,25 @@ export class SessionsService {
           nip: users.nip,
           nama: users.nama,
           email: users.email,
-          role: users.role,
           jabatan: users.jabatan,
           instansi: users.instansi,
           unit_kerja: users.unit_kerja,
-          jenjang_jabatan: users.jenjang_jabatan,
+          jenjang_jabatan_id: users.jenjang_jabatan_id,
+          jenjang_jabatan: jenjangJabatan.nama,
         },
       })
       .from(sessionParticipants)
-      .leftJoin(users, eq(sessionParticipants.user_id, users.id))
-      .where(eq(sessionParticipants.session_id, sessionId))
-      .orderBy(sql`${sessionParticipants.id} ASC`);
-
-    return rows;
+      .innerJoin(users, eq(sessionParticipants.user_id, users.id))
+      .leftJoin(jenjangJabatan, eq(users.jenjang_jabatan_id, jenjangJabatan.id))
+      .where(eq(sessionParticipants.session_id, sessionId));
   }
 
   /**
-   * Menghapus satu peserta dari sesi asesmen
+   * Menghapus peserta tertentu dari suatu sesi asesmen
    */
-  static async removeParticipant(sessionId: number, participantId: number) {
+  static async removeParticipant(sessionId: number, participantId: number): Promise<boolean> {
     const existing = await db
-      .select({ id: sessionParticipants.id })
+      .select()
       .from(sessionParticipants)
       .where(
         and(
@@ -404,30 +481,26 @@ export class SessionsService {
   }
 
   /**
-   * Verifikasi token akses peserta untuk memulai asesmen
+   * Verifikasi token akses peserta saat hendak memulai ujian
    */
   static async verifyToken(userId: number, kodeSesi: string, tokenAkses: string) {
-    // 1. Cari sesi berdasarkan kode_sesi
-    const sessionRows = await db
+    // 1. Cari sesi berdasarkan kode
+    const [session] = await db
       .select()
       .from(assessmentSessions)
       .where(eq(assessmentSessions.kode_sesi, kodeSesi.trim().toUpperCase()))
       .limit(1);
 
-    if (sessionRows.length === 0) {
+    if (!session) {
       throw new Error("Kode sesi tidak ditemukan.");
     }
 
-    const session = sessionRows[0]!;
-
     if (session.status !== "BERJALAN") {
-      throw new Error(
-        `Sesi belum dapat diakses. Status sesi saat ini: ${session.status}`
-      );
+      throw new Error(`Sesi ujian tidak sedang aktif (Status: ${session.status}).`);
     }
 
-    // 2. Cari peserta yang cocok dengan session_id, user_id, dan token_akses
-    const partRows = await db
+    // 2. Cek apakah peserta terdaftar dengan token yang sesuai
+    const [participant] = await db
       .select()
       .from(sessionParticipants)
       .where(
@@ -439,43 +512,36 @@ export class SessionsService {
       )
       .limit(1);
 
-    if (partRows.length === 0) {
-      throw new Error(
-        "Token akses tidak valid atau Anda tidak terdaftar dalam sesi ini."
-      );
+    if (!participant) {
+      throw new Error("Token akses tidak valid atau Anda tidak terdaftar pada sesi ini.");
     }
 
-    const participant = partRows[0]!;
+    if (participant.status === "SELESAI") {
+      throw new Error("Anda telah menyelesaikan ujian pada sesi ini.");
+    }
 
     return {
       session_participant_id: participant.id,
-      participant_status: participant.status,
       session: {
         id: session.id,
         judul: session.judul,
         kode_sesi: session.kode_sesi,
         durasi_menit: session.durasi_menit,
-        waktu_mulai: session.waktu_mulai,
-        waktu_selesai: session.waktu_selesai,
-        target_jenjang: session.target_jenjang,
+      },
+      participant: {
+        id: participant.id,
+        status: participant.status,
+        token_akses: participant.token_akses,
       },
     };
   }
 
   /**
-   * Mengambil daftar seluruh sesi yang diikuti oleh pengguna tertentu
+   * Mengambil daftar seluruh sesi yang diikuti oleh pengguna (ASN) yang sedang login
    */
   static async getMySessions(userId: number) {
     const rows = await db
       .select({
-        participant_id: sessionParticipants.id,
-        token_akses: sessionParticipants.token_akses,
-        status_peserta: sessionParticipants.status,
-        waktu_login: sessionParticipants.waktu_login,
-        waktu_submit: sessionParticipants.waktu_submit,
-        total_score: sessionParticipants.total_score,
-        jpm_percentage: sessionParticipants.jpm_percentage,
-        kategori_kelulusan: sessionParticipants.kategori_kelulusan,
         session_id: assessmentSessions.id,
         judul: assessmentSessions.judul,
         deskripsi: assessmentSessions.deskripsi,
@@ -483,17 +549,53 @@ export class SessionsService {
         waktu_mulai: assessmentSessions.waktu_mulai,
         waktu_selesai: assessmentSessions.waktu_selesai,
         durasi_menit: assessmentSessions.durasi_menit,
-        target_jenjang: assessmentSessions.target_jenjang,
-        status_sesi: assessmentSessions.status,
+        session_status: assessmentSessions.status,
+        target_jenjang_id: assessmentSessions.target_jenjang_id,
+        target_jenjang: jenjangJabatan.kode,
+        target_jenjang_nama: jenjangJabatan.nama,
+        participant_id: sessionParticipants.id,
+        token_akses: sessionParticipants.token_akses,
+        participant_status: sessionParticipants.status,
+        waktu_login: sessionParticipants.waktu_login,
+        waktu_submit: sessionParticipants.waktu_submit,
+        total_score: sessionParticipants.total_score,
+        jpm_percentage: sessionParticipants.jpm_percentage,
+        kategori_kelulusan: sessionParticipants.kategori_kelulusan,
       })
       .from(sessionParticipants)
       .innerJoin(
         assessmentSessions,
         eq(sessionParticipants.session_id, assessmentSessions.id)
       )
+      .leftJoin(
+        jenjangJabatan,
+        eq(assessmentSessions.target_jenjang_id, jenjangJabatan.id)
+      )
       .where(eq(sessionParticipants.user_id, userId))
-      .orderBy(sql`${assessmentSessions.waktu_mulai} DESC`);
+      .orderBy(sql`${assessmentSessions.waktu_mulai} desc`);
 
-    return rows;
+    return rows.map((r) => ({
+      participant_id: r.participant_id,
+      session_id: r.session_id,
+      judul: r.judul,
+      deskripsi: r.deskripsi,
+      kode_sesi: r.kode_sesi,
+      waktu_mulai: r.waktu_mulai,
+      waktu_selesai: r.waktu_selesai,
+      durasi_menit: r.durasi_menit,
+      status: r.session_status,
+      status_sesi: r.session_status,
+      target_jenjang: r.target_jenjang,
+      target_jenjang_id: r.target_jenjang_id,
+      target_jenjang_nama: r.target_jenjang_nama,
+      participant_status: r.participant_status,
+      status_peserta: r.participant_status,
+      token_akses: r.token_akses,
+      waktu_login: r.waktu_login,
+      waktu_submit: r.waktu_submit,
+      total_score: Number(r.total_score || 0),
+      jpm_percentage: Number(r.jpm_percentage || 0),
+      kategori_kelulusan: r.kategori_kelulusan,
+    }));
   }
 }

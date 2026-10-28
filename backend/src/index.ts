@@ -8,6 +8,7 @@ import { questionsRoute } from "./modules/questions/questions.route";
 import { sessionsRoute } from "./modules/sessions/sessions.route";
 import { examsRoute } from "./modules/exams/exams.route";
 import { reportsRoute } from "./modules/reports/reports.route";
+import { jabatanRoute } from "./modules/jabatan/jabatan.route";
 
 const port = Number(process.env.PORT) || 3000;
 const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
@@ -36,6 +37,7 @@ export const app = new Elysia()
       .use(sessionsRoute)
       .use(examsRoute)
       .use(reportsRoute)
+      .use(jabatanRoute)
   )
   .listen(port);
 

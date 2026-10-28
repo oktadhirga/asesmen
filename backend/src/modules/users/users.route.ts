@@ -19,6 +19,9 @@ export const usersRoute = new Elysia()
             search: query.search,
             role: query.role as any,
             jenjang_jabatan: query.jenjang_jabatan as any,
+            jenjang_jabatan_id: query.jenjang_jabatan_id
+              ? Number(query.jenjang_jabatan_id)
+              : undefined,
           });
 
           return {
@@ -35,14 +38,8 @@ export const usersRoute = new Elysia()
             role: t.Optional(
               t.Union([t.Literal("ADMIN"), t.Literal("PESERTA")])
             ),
-            jenjang_jabatan: t.Optional(
-              t.Union([
-                t.Literal("PELAKSANA"),
-                t.Literal("PENGAWAS"),
-                t.Literal("ADMINISTRATOR"),
-                t.Literal("JPT"),
-              ])
-            ),
+            jenjang_jabatan: t.Optional(t.String()),
+            jenjang_jabatan_id: t.Optional(t.String()),
           }),
         }
       )
@@ -87,6 +84,12 @@ export const usersRoute = new Elysia()
               instansi: body.instansi,
               unit_kerja: body.unit_kerja,
               jenjang_jabatan: body.jenjang_jabatan,
+              jenjang_jabatan_id:
+                body.jenjang_jabatan_id !== undefined
+                  ? body.jenjang_jabatan_id === null
+                    ? null
+                    : Number(body.jenjang_jabatan_id)
+                  : undefined,
             });
 
             set.status = 201;
@@ -115,14 +118,8 @@ export const usersRoute = new Elysia()
             jabatan: t.Optional(t.String()),
             instansi: t.Optional(t.String()),
             unit_kerja: t.Optional(t.String()),
-            jenjang_jabatan: t.Optional(
-              t.Union([
-                t.Literal("PELAKSANA"),
-                t.Literal("PENGAWAS"),
-                t.Literal("ADMINISTRATOR"),
-                t.Literal("JPT"),
-              ])
-            ),
+            jenjang_jabatan_id: t.Optional(t.Nullable(t.Number())),
+            jenjang_jabatan: t.Optional(t.Nullable(t.String())),
           }),
         }
       )
@@ -134,7 +131,15 @@ export const usersRoute = new Elysia()
           try {
             const updated = await UsersService.updateUser(
               Number(params.id),
-              body
+              {
+                ...body,
+                jenjang_jabatan_id:
+                  body.jenjang_jabatan_id !== undefined
+                    ? body.jenjang_jabatan_id === null
+                      ? null
+                      : Number(body.jenjang_jabatan_id)
+                    : undefined,
+              }
             );
 
             if (!updated) {
@@ -173,14 +178,8 @@ export const usersRoute = new Elysia()
             jabatan: t.Optional(t.String()),
             instansi: t.Optional(t.String()),
             unit_kerja: t.Optional(t.String()),
-            jenjang_jabatan: t.Optional(
-              t.Union([
-                t.Literal("PELAKSANA"),
-                t.Literal("PENGAWAS"),
-                t.Literal("ADMINISTRATOR"),
-                t.Literal("JPT"),
-              ])
-            ),
+            jenjang_jabatan_id: t.Optional(t.Nullable(t.Number())),
+            jenjang_jabatan: t.Optional(t.Nullable(t.String())),
           }),
         }
       )
