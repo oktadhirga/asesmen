@@ -262,11 +262,23 @@
     isSubmitting = true;
     submitError = null;
 
+    const targetId = participantId || sessionId;
+    if (!targetId) {
+      submitError = "ID peserta atau sesi tidak valid. Silakan muat ulang halaman.";
+      isSubmitting = false;
+      return;
+    }
+
     try {
-      const res = await ApiClient.post<any>(`/exams/${participantId}/submit`, {});
-      if (res.success) {
+      const res = await ApiClient.post<any>(`/exams/${targetId}/submit`, {});
+      if (res.success && res.data) {
         // Sukses submit, alihkan ke laporan individu
-        window.location.href = `/participant/reports/${participantId}`;
+        const finalParticipantId =
+          res.data.participant_id ||
+          res.data.session_participant_id ||
+          participantId ||
+          targetId;
+        window.location.href = `/participant/reports/${finalParticipantId}`;
       } else {
         submitError = res.message || "Gagal mengumpulkan lembar jawaban.";
       }

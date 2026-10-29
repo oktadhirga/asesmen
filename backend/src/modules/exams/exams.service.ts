@@ -139,6 +139,7 @@ export class ExamsService {
     const sisaWaktu = this.calculateRemainingSeconds(session, updatedPart);
 
     return {
+      participant_id: updatedPart.id,
       session_participant_id: updatedPart.id,
       session_id: session.id,
       judul_sesi: session.judul,
@@ -152,24 +153,75 @@ export class ExamsService {
   }
 
   /**
-   * 2. Mengambil daftar butir soal ujian dengan proteksi kerahasiaan bobot opsi
+   * Helper untuk meresolusi data peserta (session_participants) secara aman dan toleran:
+   * 1. Mencari berdasarkan ID peserta (session_participants.id) dan ID user yang sedang login.
+   * 2. Fallback cerdas: Jika client mengirim sessionId alih-alih participantId, cari baris peserta milik user pada sesi tersebut.
+   * 3. Jika user adalah ADMIN, izinkan akses berdasarkan ID peserta (untuk pengawasan / penutupan sesi oleh Asesor).
    */
-  static async getExamQuestions(userId: number, participantId: number) {
-    // Validasi kepemilikan participant
-    const [participant] = await db
+  static async resolveParticipant(
+    userId: number,
+    participantOrSessionId: number,
+    userRole?: string
+  ) {
+    if (!participantOrSessionId || isNaN(participantOrSessionId)) {
+      throw new Error("Akses ditolak: Data peserta ujian tidak valid.");
+    }
+
+    // 1. Coba cari sessionParticipants dengan id = participantOrSessionId DAN user_id = userId
+    let [participant] = await db
       .select()
       .from(sessionParticipants)
       .where(
         and(
-          eq(sessionParticipants.id, participantId),
+          eq(sessionParticipants.id, participantOrSessionId),
           eq(sessionParticipants.user_id, userId)
         )
       )
       .limit(1);
 
+    // 2. Fallback cerdas: jika participantOrSessionId ternyata adalah session_id di mana user ini terdaftar
+    if (!participant) {
+      const [bySession] = await db
+        .select()
+        .from(sessionParticipants)
+        .where(
+          and(
+            eq(sessionParticipants.session_id, participantOrSessionId),
+            eq(sessionParticipants.user_id, userId)
+          )
+        )
+        .limit(1);
+      if (bySession) {
+        participant = bySession;
+      }
+    }
+
+    // 3. Jika user adalah ADMIN, izinkan akses berdasarkan ID peserta
+    if (!participant && userRole === "ADMIN") {
+      const [byAdminId] = await db
+        .select()
+        .from(sessionParticipants)
+        .where(eq(sessionParticipants.id, participantOrSessionId))
+        .limit(1);
+      if (byAdminId) {
+        participant = byAdminId;
+      }
+    }
+
     if (!participant) {
       throw new Error("Akses ditolak: Data peserta ujian tidak valid.");
     }
+
+    return participant;
+  }
+
+  /**
+   * 2. Mengambil daftar butir soal ujian dengan proteksi kerahasiaan bobot opsi
+   */
+  static async getExamQuestions(userId: number, participantId: number, userRole?: string) {
+    // Validasi kepemilikan participant secara aman
+    const participant = await this.resolveParticipant(userId, participantId, userRole);
+    const resolvedParticipantId = participant.id;
 
     // Ambil semua soal SJT aktif
     const allQuestions = await db
@@ -204,7 +256,7 @@ export class ExamsService {
     const existingAnswers = await db
       .select()
       .from(participantAnswers)
-      .where(eq(participantAnswers.session_participant_id, participantId));
+      .where(eq(participantAnswers.session_participant_id, resolvedParticipantId));
 
     const answerMap = new Map<number, typeof existingAnswers[0]>();
     for (const ans of existingAnswers) {
@@ -266,22 +318,11 @@ export class ExamsService {
   static async saveAnswer(
     userId: number,
     participantId: number,
-    data: SaveAnswerData
+    data: SaveAnswerData,
+    userRole?: string
   ) {
-    const [participant] = await db
-      .select()
-      .from(sessionParticipants)
-      .where(
-        and(
-          eq(sessionParticipants.id, participantId),
-          eq(sessionParticipants.user_id, userId)
-        )
-      )
-      .limit(1);
-
-    if (!participant) {
-      throw new Error("Akses ditolak: Data peserta ujian tidak valid.");
-    }
+    const participant = await this.resolveParticipant(userId, participantId, userRole);
+    const resolvedParticipantId = participant.id;
 
     if (participant.status === "SELESAI") {
       throw new Error(
@@ -314,7 +355,7 @@ export class ExamsService {
       .from(participantAnswers)
       .where(
         and(
-          eq(participantAnswers.session_participant_id, participantId),
+          eq(participantAnswers.session_participant_id, resolvedParticipantId),
           eq(participantAnswers.question_id, data.question_id)
         )
       )
@@ -332,7 +373,7 @@ export class ExamsService {
         .where(eq(participantAnswers.id, existingAnswer.id));
     } else {
       await db.insert(participantAnswers).values({
-        session_participant_id: participantId,
+        session_participant_id: resolvedParticipantId,
         question_id: data.question_id,
         selected_option_id: data.selected_option_id,
         bobot_diperoleh: bobotDiperoleh,
@@ -350,21 +391,13 @@ export class ExamsService {
   /**
    * 4. Mencatat pelanggaran perpindahan tab / aplikasi (Proctoring)
    */
-  static async recordTabSwitch(userId: number, participantId: number) {
-    const [participant] = await db
-      .select()
-      .from(sessionParticipants)
-      .where(
-        and(
-          eq(sessionParticipants.id, participantId),
-          eq(sessionParticipants.user_id, userId)
-        )
-      )
-      .limit(1);
-
-    if (!participant) {
-      throw new Error("Akses ditolak: Data peserta ujian tidak valid.");
-    }
+  static async recordTabSwitch(
+    userId: number,
+    participantId: number,
+    userRole?: string
+  ) {
+    const participant = await this.resolveParticipant(userId, participantId, userRole);
+    const resolvedParticipantId = participant.id;
 
     if (participant.status === "SELESAI") {
       throw new Error("Ujian telah selesai.");
@@ -375,7 +408,7 @@ export class ExamsService {
     await db
       .update(sessionParticipants)
       .set({ tab_switch_count: newCount })
-      .where(eq(sessionParticipants.id, participantId));
+      .where(eq(sessionParticipants.id, resolvedParticipantId));
 
     return {
       tab_switch_count: newCount,
@@ -387,21 +420,13 @@ export class ExamsService {
   /**
    * 5. Status pengerjaan & sinkronisasi timer server
    */
-  static async getExamStatus(userId: number, participantId: number) {
-    const [participant] = await db
-      .select()
-      .from(sessionParticipants)
-      .where(
-        and(
-          eq(sessionParticipants.id, participantId),
-          eq(sessionParticipants.user_id, userId)
-        )
-      )
-      .limit(1);
-
-    if (!participant) {
-      throw new Error("Akses ditolak: Data peserta ujian tidak valid.");
-    }
+  static async getExamStatus(
+    userId: number,
+    participantId: number,
+    userRole?: string
+  ) {
+    const participant = await this.resolveParticipant(userId, participantId, userRole);
+    const resolvedParticipantId = participant.id;
 
     const [session] = await db
       .select()
@@ -413,7 +438,7 @@ export class ExamsService {
     const answers = await db
       .select()
       .from(participantAnswers)
-      .where(eq(participantAnswers.session_participant_id, participantId));
+      .where(eq(participantAnswers.session_participant_id, resolvedParticipantId));
 
     const totalAnswered = answers.length;
     const totalDoubt = answers.filter((a) => a.is_ragu).length;
@@ -422,7 +447,7 @@ export class ExamsService {
       : 0;
 
     return {
-      session_participant_id: participant.id,
+      session_participant_id: resolvedParticipantId,
       status: participant.status,
       total_answered: totalAnswered,
       total_doubt: totalDoubt,
@@ -436,21 +461,13 @@ export class ExamsService {
   /**
    * 6. Submit final dan kunci lembar jawaban ujian
    */
-  static async submitExam(userId: number, participantId: number) {
-    const [participant] = await db
-      .select()
-      .from(sessionParticipants)
-      .where(
-        and(
-          eq(sessionParticipants.id, participantId),
-          eq(sessionParticipants.user_id, userId)
-        )
-      )
-      .limit(1);
-
-    if (!participant) {
-      throw new Error("Akses ditolak: Data peserta ujian tidak valid.");
-    }
+  static async submitExam(
+    userId: number,
+    participantId: number,
+    userRole?: string
+  ) {
+    const participant = await this.resolveParticipant(userId, participantId, userRole);
+    const resolvedParticipantId = participant.id;
 
     if (participant.status === "SELESAI") {
       throw new Error("Ujian sudah diselesaikan sebelumnya.");
@@ -460,7 +477,7 @@ export class ExamsService {
     const answers = await db
       .select()
       .from(participantAnswers)
-      .where(eq(participantAnswers.session_participant_id, participantId));
+      .where(eq(participantAnswers.session_participant_id, resolvedParticipantId));
 
     const totalScore = answers.reduce((sum, a) => sum + (a.bobot_diperoleh || 0), 0);
     const submitTime = new Date();
@@ -472,13 +489,14 @@ export class ExamsService {
         waktu_submit: submitTime,
         total_score: totalScore.toFixed(2),
       })
-      .where(eq(sessionParticipants.id, participantId));
+      .where(eq(sessionParticipants.id, resolvedParticipantId));
 
     // Hitung dan simpan nilai JPM serta kategori kelulusan langsung ke database
-    const reportData = await ReportsService.calculateParticipantReport(participantId);
+    const reportData = await ReportsService.calculateParticipantReport(resolvedParticipantId);
 
     return {
-      session_participant_id: participant.id,
+      participant_id: resolvedParticipantId,
+      session_participant_id: resolvedParticipantId,
       status: "SELESAI",
       waktu_submit: submitTime,
       total_answered: answers.length,

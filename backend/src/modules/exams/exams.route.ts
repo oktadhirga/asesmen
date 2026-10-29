@@ -59,7 +59,8 @@ export const examsRoute = new Elysia()
           try {
             const data = await ExamsService.getExamQuestions(
               user.id,
-              Number(params.participantId)
+              Number(params.participantId),
+              user.role
             );
 
             return {
@@ -99,7 +100,8 @@ export const examsRoute = new Elysia()
                 question_id: Number(body.question_id),
                 selected_option_id: Number(body.selected_option_id),
                 is_ragu: body.is_ragu,
-              }
+              },
+              user.role
             );
 
             return {
@@ -139,7 +141,8 @@ export const examsRoute = new Elysia()
           try {
             const result = await ExamsService.recordTabSwitch(
               user.id,
-              Number(params.participantId)
+              Number(params.participantId),
+              user.role
             );
 
             return {
@@ -174,7 +177,8 @@ export const examsRoute = new Elysia()
           try {
             const data = await ExamsService.getExamStatus(
               user.id,
-              Number(params.participantId)
+              Number(params.participantId),
+              user.role
             );
 
             return {
@@ -208,7 +212,8 @@ export const examsRoute = new Elysia()
           try {
             const data = await ExamsService.submitExam(
               user.id,
-              Number(params.participantId)
+              Number(params.participantId),
+              user.role
             );
 
             return {

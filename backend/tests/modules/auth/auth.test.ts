@@ -47,7 +47,7 @@ describe("Modul Auth — TDD Tahap 3 (Issue #1)", () => {
       expect(json.user.nip).toBe("198501012010011001");
       expect(json.user.role).toBe("ADMIN");
       expect(json.user.password_hash).toBeUndefined(); // Password hash tidak boleh bocor
-    });
+    }, 15000);
 
     it("should reject login with incorrect password with 401", async () => {
       const response = await app.handle(

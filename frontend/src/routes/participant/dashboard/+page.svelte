@@ -85,7 +85,8 @@
 
       if (res.success && res.data) {
         // Berhasil mulai ujian, redirect ke lembar ujian
-        window.location.href = `/participant/exam/${selectedSession.session_id}?participantId=${res.data.participant_id}`;
+        const pId = res.data.participant_id || res.data.session_participant_id;
+        window.location.href = `/participant/exam/${selectedSession.session_id}?participantId=${pId}`;
       } else {
         tokenError = res.message || "Token akses tidak valid atau sesi belum aktif.";
       }
