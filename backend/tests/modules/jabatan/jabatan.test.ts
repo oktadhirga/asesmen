@@ -53,6 +53,22 @@ describe("TDD Tahap 14.4: API Master Jenjang Jabatan & Standar Level", () => {
       expect(codes).toContain("PELAKSANA");
       expect(codes).toContain("JF_TERAMPIL");
     });
+
+    it("GET /api/jabatan/standards harus mengembalikan seluruh matriks 126 standar kompetensi", async () => {
+      const res = await app.handle(new Request("http://localhost/api/jabatan/standards"));
+      expect(res.status).toBe(200);
+      const json = (await res.json()) as any;
+      expect(json.success).toBe(true);
+      expect(Array.isArray(json.data)).toBe(true);
+      expect(json.data.length).toBe(126); // 14 jenjang x 9 kompetensi
+
+      // Verifikasi format atribut respon
+      const first = json.data[0];
+      expect(first.jenjang_jabatan_id).toBeDefined();
+      expect(first.competency_id).toBeDefined();
+      expect(first.kode_kompetensi).toBeDefined();
+      expect(first.target_level).toBeDefined();
+    });
   });
 
   describe("GET /api/jabatan/:id", () => {

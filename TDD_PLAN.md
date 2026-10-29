@@ -970,6 +970,132 @@ Menambahkan kolom `token_sesi` (`varchar(20)`) pada tabel `assessment_sessions`.
 
 ---
 
+## Tahap 17: Filter Butir Soal Sesuai Target Level Sesi & Bank Soal SJT Level 1
+
+> **Tujuan**: Menyelaraskan butir soal yang diujikan kepada peserta agar sesuai secara ketat (*strict filtering*) dengan target level jenjang sesi asesmen (`jenjang_jabatan.level_standar_umum` 1 s.d. 5). Menghilangkan bug di mana peserta sesi Level 1 menerima paket soal dari semua tingkatan level (Level 2 & Level 3). Sekaligus melengkapi bank soal bawaan (*seeder*) dengan 18 butir soal SJT realistis khusus Level 1 agar seluruh 9 dimensi kompetensi PermenPANRB No. 38 Tahun 2017 terwakili secara komprehensif.
+
+### 17.1: Pengujian Unit TDD Isolasi Level Butir Soal (Red $\rightarrow$ Green)
+
+**Ringkasan Tugas**  
+1. Menambahkan skenario uji pada `backend/tests/modules/exams/exams.test.ts` untuk memastikan bahwa saat sesi bertarget jenjang Level 1 (`PELAKSANA`), endpoint `GET /api/exams/:participantId/questions` hanya mengembalikan butir-butir soal dengan `target_level: 1`.
+2. Menambahkan skenario multi-level: membuat sesi Level 2 (`PENGAWAS`) dan memastikan seluruh butir soal yang ditarik oleh peserta hanya memiliki `target_level: 2`.
+3. Memastikan pengujian keamanan tetap berlaku: bobot nilai opsi (`bobot_nilai`) tetap dirahasiakan dan diacak secara deterministik.
+
+**Target File**  
+- `backend/tests/modules/exams/exams.test.ts`
+
+**Kode Test Suite**
+```typescript
+// backend/tests/modules/exams/exams.test.ts
+it("harus memfilter butir soal hanya sesuai target level sesi asesmen (Level 1 hanya soal Level 1)", async () => {
+  const res = await app.handle(
+    new Request(`http://localhost/api/exams/${participantId}/questions`, {
+      headers: { Authorization: `Bearer ${pesertaToken}` },
+    })
+  );
+
+  expect(res.status).toBe(200);
+  const json = (await res.json()) as any;
+  expect(json.success).toBe(true);
+  expect(json.data.length).toBeGreaterThan(0);
+
+  // Sesi ini ditargetkan untuk PELAKSANA (level 1), maka SEMUA soal wajib ber-target_level 1
+  for (const q of json.data) {
+    expect(q.target_level).toBe(1);
+  }
+});
+
+it("harus menyajikan soal level 2 ketika sesi asesmen ditargetkan untuk jenjang level 2 (PENGAWAS)", async () => {
+  // Verifikasi isolasi level pada sesi jenjang Pengawas (Level 2)
+  for (const q of qJson.data) {
+    expect(q.target_level).toBe(2);
+  }
+});
+```
+
+**Kriteria Keberhasilan / Acceptance Criteria**  
+- [x] Pengujian TDD Red terpicu sebelum implementasi perbaikan filter level.
+- [x] Pengujian TDD Green lolos 100% setelah query difilter berdasarkan target level sesi.
+
+---
+
+### 17.2: Engine Filter Butir Soal Berdasarkan Target Level Sesi
+
+**Ringkasan Tugas**  
+1. Mengimpor relasi `jenjangJabatan` pada `backend/src/modules/exams/exams.service.ts`.
+2. Pada method `ExamsService.getExamQuestions`, menambahkan kueri join `assessmentSessions` ke `jenjangJabatan` berdasarkan `participant.session_id` untuk mengekstrak atribut `level_standar_umum` (1 s.d. 5).
+3. Menerapkan klausa `WHERE eq(questions.target_level, sessionTargetLevel)` pada penarikan butir soal aktif dari tabel `questions`.
+
+**Target File**  
+- `backend/src/modules/exams/exams.service.ts`
+
+**Kriteria Keberhasilan / Acceptance Criteria**  
+- [x] Query database soal secara atomik menyaring `questions.target_level` sesuai `level_standar_umum` jenjang sesi.
+- [x] Peserta asesmen level 1 tidak lagi menerima soal manajerial level 2 atau 3.
+- [x] Test unit `exams.test.ts` (12/12) lulus tanpa kegagalan.
+
+---
+
+### 17.3: Penambahan Bank Soal SJT Level 1 (9 Dimensi $\times$ 2 Butir = 18 Butir)
+
+**Ringkasan Tugas**  
+1. Menambahkan **18 butir soal SJT realistis khusus Level 1** pada `initialQuestions` di `backend/src/db/seed.ts` (2 butir per dimensi untuk seluruh 9 Dimensi PermenPANRB 38/2017: `KOMP-01` s.d. `KOMP-09`).
+2. Skenario kasus berfokus pada ranah tugas operasional, kepatuhan etika kerja, SOP pelayanan publik dasar, serta disiplin ASN pelaksana.
+3. Setiap butir soal dilengkapi tepat 4 opsi pilihan respon dengan kombinasi bobot nilai unik tepat {1, 2, 3, 4}.
+4. Menjalankan migrasi seeder secara idempoten agar database lokal terisi lengkap dengan soal-soal Level 1.
+
+**Target File**  
+- `backend/src/db/seed.ts`
+
+**Kriteria Keberhasilan / Acceptance Criteria**  
+- [x] Terdapat minimal 18 butir soal Level 1 yang mencakup seluruh 9 dimensi kompetensi secara merata.
+- [x] Setiap butir soal lolos validasi aturan SJT PermenPANRB (4 opsi unik berbobot 1 s.d. 4).
+- [x] Seeder berhasil dieksekusi secara idempoten tanpa duplikasi data.
+- [x] Seluruh 147 test di 13 file pengujian backend berhasil lulus 100%.
+
+---
+
+## Tahap 18: Perbaikan Matriks Standar Level 14 Jenjang & Filter Kelompok Jabatan
+
+> **Tujuan**: Memperbaiki tampilan tabel Matriks Standar Level pada halaman Admin (`/admin/standards`) yang sebelumnya kosong (tampil `-`) akibat *mismatch* nama atribut respon API standar (`kode_kompetensi`), serta memperbaiki filter dropdown Kelompok Jabatan yang tidak berfungsi akibat perbedaan representasi nilai string (`JPT` vs `Jabatan Pimpinan Tinggi`). Selain itu, mengoptimalkan pengambilan 126 standar dengan menambahkan endpoint batch tunggal `GET /api/jabatan/standards`.
+
+### 18.1: Endpoint Batch Matriks Standar Kompetensi (`GET /api/jabatan/standards`)
+
+**Ringkasan Tugas**  
+1. Menambahkan method `JabatanService.getAllStandards()` yang mengekstrak seluruh 126 baris standar kompetensi untuk seluruh 14 jenjang jabatan dalam 1 kueri atomik.
+2. Mendaftarkan route `GET /api/jabatan/standards` pada `jabatanRoute`.
+3. Menuliskan pengujian TDD pada `backend/tests/modules/jabatan/jabatan.test.ts`.
+
+**Target File**  
+- `backend/src/modules/jabatan/jabatan.service.ts`
+- `backend/src/modules/jabatan/jabatan.route.ts`
+- `backend/tests/modules/jabatan/jabatan.test.ts`
+
+**Kriteria Keberhasilan / Acceptance Criteria**  
+- [x] Endpoint `GET /api/jabatan/standards` mengembalikan array berisi tepat 126 standar pemetaan (14 jenjang $\times$ 9 kompetensi).
+- [x] Test suite `jabatan.test.ts` (12/12) lulus 100%.
+
+---
+
+### 18.2: Penyelarasan Frontend Matriks & Filter Kelompok Jabatan
+
+**Ringkasan Tugas**  
+1. Memperbaiki pemetaan respon standar pada `frontend/src/routes/admin/standards/+page.svelte` dengan membaca `s.kode_kompetensi || s.competency?.kode || s.competency_kode`.
+2. Menghubungkan fungsi `loadAllStandards()` ke endpoint batch `GET /api/jabatan/standards` dengan fallback paralel `Promise.all` per jenjang.
+3. Menambahkan fungsi `normalizeKelompok` untuk memastikan kecocokan dua arah antara nilai dropdown (`JPT`, `ADMINISTRASI`, `JF_KEAHLIAN`, `JF_KETERAMPILAN`) dengan string di basis data (`Jabatan Pimpinan Tinggi`, `Jabatan Administrasi`, `JF Keahlian`, `JF Keterampilan`).
+4. Memperbaiki tampilan kartu rincian jenjang agar membaca `item.kode_kompetensi` dan `item.nama_kompetensi`.
+
+**Target File**  
+- `frontend/src/routes/admin/standards/+page.svelte`
+
+**Kriteria Keberhasilan / Acceptance Criteria**  
+- [x] Tabel matriks 14 jenjang $\times$ 9 dimensi langsung terisi lengkap dengan badge level (Level 1 s.d. 5) tanpa ada sel yang bernilai `-`.
+- [x] Memilih opsi filter "Kelompok Jabatan" pada dropdown langsung memfilter baris tabel sesuai kelompok yang dipilih tanpa menjadi kosong.
+- [x] Klik baris atau tombol "Rincian" menampilkan 9 kartu standar kompetensi secara lengkap.
+- [x] `bun run check` di `frontend/` lolos dengan 0 error dan 0 warning.
+
+---
+
 ## Dependency Graph (Urutan Eksekusi Master)
 
 ```mermaid
@@ -991,6 +1117,8 @@ graph TD
     T13 --> T14["Tahap 14: Standar Jabatan & Kamus ASN (PermenPANRB 38/2017)"]
     T14 --> T15["Tahap 15: Penyelarasan Frontend UI & Kamus ASN"]
     T15 --> T16["Tahap 16: Refaktor Token Sesi Kolektif (1 Sesi = 1 Token)"]
+    T16 --> T17["Tahap 17: Filter Butir Soal Sesuai Target Level Sesi"]
+    T17 --> T18["Tahap 18: Perbaikan Matriks Standar Level & Filter Kelompok"]
 
     style T1 fill:#0b1e3f,color:#d4af37,stroke:#d4af37
     style T8 fill:#0b1e3f,color:#d4af37,stroke:#d4af37
@@ -998,7 +1126,9 @@ graph TD
     style T12 fill:#0b1e3f,color:#d4af37,stroke:#d4af37
     style T14 fill:#0b1e3f,color:#d4af37,stroke:#d4af37
     style T15 fill:#0b1e3f,color:#d4af37,stroke:#d4af37
-    style T16 fill:#14532d,color:#ffffff,stroke:#22c55e
+    style T16 fill:#0b1e3f,color:#d4af37,stroke:#d4af37
+    style T17 fill:#0b1e3f,color:#d4af37,stroke:#d4af37
+    style T18 fill:#14532d,color:#ffffff,stroke:#22c55e
 ```
 
-> **Catatan Fase**: Tahap 1 s.d. 15 mencakup fondasi lengkap, kalkulasi standar kamus ASN, dan perapian navigasi. Tahap 16 menyempurnakan alur operasional ujian di ruangan asesmen dengan model 1 token per sesi bersama.
+> **Catatan Fase**: Tahap 1 s.d. 15 mencakup fondasi lengkap, kalkulasi standar kamus ASN, dan perapian navigasi. Tahap 16 menyempurnakan alur operasional ujian di ruangan asesmen dengan model 1 token bersama per sesi. Tahap 17 menyempurnakan ketepatan psikometrik & relevansi tugas jabatan dengan menyaring soal ujian agar strictly sesuai target level jenjang sesi asesmen serta melengkapi bank soal Level 1. Tahap 18 memastikan katalog Matriks Standar Level 14 jenjang dan filter kelompok jabatan di admin berfungsi sempurna secara visual dan interaktif.

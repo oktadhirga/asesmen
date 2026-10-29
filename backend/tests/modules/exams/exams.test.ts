@@ -225,6 +225,98 @@ describe("Modul Exams (Core Engine & Proctoring) — TDD Tahap 8", () => {
       }
     });
 
+    it("harus memfilter butir soal hanya sesuai target level sesi asesmen (Level 1 hanya soal Level 1)", async () => {
+      const res = await app.handle(
+        new Request(`http://localhost/api/exams/${participantId}/questions`, {
+          headers: { Authorization: `Bearer ${pesertaToken}` },
+        })
+      );
+
+      expect(res.status).toBe(200);
+      const json = (await res.json()) as any;
+      expect(json.success).toBe(true);
+      expect(json.data.length).toBeGreaterThan(0);
+
+      // Sesi ini ditargetkan untuk PELAKSANA (level 1), maka SEMUA soal wajib ber-target_level 1
+      for (const q of json.data) {
+        expect(q.target_level).toBe(1);
+      }
+    });
+
+    it("harus menyajikan soal level 2 ketika sesi asesmen ditargetkan untuk jenjang level 2 (PENGAWAS)", async () => {
+      // 1. Admin membuat sesi Level 2 (PENGAWAS)
+      const now = new Date();
+      const createLevel2Res = await app.handle(
+        new Request("http://localhost/api/sessions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${adminToken}`,
+          },
+          body: JSON.stringify({
+            judul: "Ujian Level 2 Pengawas",
+            kode_sesi: "SESI-TEST-LVL2",
+            waktu_mulai: now.toISOString(),
+            waktu_selesai: new Date(now.getTime() + 120 * 60 * 1000).toISOString(),
+            durasi_menit: 90,
+            target_jenjang: "PENGAWAS",
+          }),
+        })
+      );
+      const lvl2SessJson = (await createLevel2Res.json()) as any;
+      const lvl2SessId = lvl2SessJson.data.id;
+
+      // Ubah status ke BERJALAN
+      await app.handle(
+        new Request(`http://localhost/api/sessions/${lvl2SessId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${adminToken}`,
+          },
+          body: JSON.stringify({ status: "BERJALAN" }),
+        })
+      );
+
+      // Daftarkan peserta ke sesi Level 2
+      const regRes = await app.handle(
+        new Request(`http://localhost/api/sessions/${lvl2SessId}/participants`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${adminToken}`,
+          },
+          body: JSON.stringify({ user_ids: [pesertaUser.id] }),
+        })
+      );
+      const regJson = (await regRes.json()) as any;
+      const lvl2ParticipantId = regJson.data[0].id;
+
+      // Ambil soal ujian untuk peserta sesi Level 2
+      const qRes = await app.handle(
+        new Request(`http://localhost/api/exams/${lvl2ParticipantId}/questions`, {
+          headers: { Authorization: `Bearer ${pesertaToken}` },
+        })
+      );
+      const qJson = (await qRes.json()) as any;
+      expect(qRes.status).toBe(200);
+      expect(qJson.success).toBe(true);
+      expect(qJson.data.length).toBeGreaterThan(0);
+
+      // Seluruh soal wajib ber-target_level 2
+      for (const q of qJson.data) {
+        expect(q.target_level).toBe(2);
+      }
+
+      // Cleanup sesi Level 2 uji
+      await app.handle(
+        new Request(`http://localhost/api/sessions/${lvl2SessId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${adminToken}` },
+        })
+      );
+    });
+
     it("harus menolak akses jika participantId bukan milik user login (403 Forbidden)", async () => {
       const res = await app.handle(
         new Request(`http://localhost/api/exams/999999/questions`, {

@@ -22,6 +22,9 @@
     competency_id: number;
     competency_kode?: string;
     competency_nama?: string;
+    kode_kompetensi?: string;
+    nama_kompetensi?: string;
+    kategori?: "MANAJERIAL" | "SOSIO_KULTURAL";
     target_level: number;
   }>>([]);
   let isStandardsLoading = $state(false);
@@ -45,20 +48,20 @@
 
   // 14 Jenjang fallback
   const FALLBACK_JABATAN: MasterJabatan[] = [
-    { id: 1, kode: "JPT_UTAMA", nama: "JPT Utama", kelompok_jabatan: "JPT", level_standar_umum: 5 },
-    { id: 2, kode: "JPT_MADYA", nama: "JPT Madya", kelompok_jabatan: "JPT", level_standar_umum: 5 },
-    { id: 3, kode: "JPT_PRATAMA", nama: "JPT Pratama", kelompok_jabatan: "JPT", level_standar_umum: 4 },
-    { id: 4, kode: "ADMINISTRATOR", nama: "Jabatan Administrator", kelompok_jabatan: "ADMINISTRASI", level_standar_umum: 3 },
-    { id: 5, kode: "PENGAWAS", nama: "Jabatan Pengawas", kelompok_jabatan: "ADMINISTRASI", level_standar_umum: 2 },
-    { id: 6, kode: "PELAKSANA", nama: "Jabatan Pelaksana", kelompok_jabatan: "ADMINISTRASI", level_standar_umum: 1 },
-    { id: 7, kode: "JF_AHLI_UTAMA", nama: "JF Ahli Utama", kelompok_jabatan: "JF_KEAHLIAN", level_standar_umum: 5 },
-    { id: 8, kode: "JF_AHLI_MADYA", nama: "JF Ahli Madya", kelompok_jabatan: "JF_KEAHLIAN", level_standar_umum: 4 },
-    { id: 9, kode: "JF_AHLI_MUDA", nama: "JF Ahli Muda", kelompok_jabatan: "JF_KEAHLIAN", level_standar_umum: 3 },
-    { id: 10, kode: "JF_AHLI_PERTAMA", nama: "JF Ahli Pertama", kelompok_jabatan: "JF_KEAHLIAN", level_standar_umum: 2 },
-    { id: 11, kode: "JF_PENYELIA", nama: "JF Penyelia", kelompok_jabatan: "JF_KETERAMPILAN", level_standar_umum: 3 },
-    { id: 12, kode: "JF_MAHIR", nama: "JF Mahir", kelompok_jabatan: "JF_KETERAMPILAN", level_standar_umum: 2 },
-    { id: 13, kode: "JF_TERAMPIL", nama: "JF Terampil", kelompok_jabatan: "JF_KETERAMPILAN", level_standar_umum: 2 },
-    { id: 14, kode: "JF_PEMULA", nama: "JF Pemula", kelompok_jabatan: "JF_KETERAMPILAN", level_standar_umum: 1 },
+    { id: 1, kode: "JPT_UTAMA", nama: "JPT Utama", kelompok_jabatan: "Jabatan Pimpinan Tinggi", level_standar_umum: 5 },
+    { id: 2, kode: "JPT_MADYA", nama: "JPT Madya", kelompok_jabatan: "Jabatan Pimpinan Tinggi", level_standar_umum: 5 },
+    { id: 3, kode: "JPT_PRATAMA", nama: "JPT Pratama", kelompok_jabatan: "Jabatan Pimpinan Tinggi", level_standar_umum: 4 },
+    { id: 4, kode: "ADMINISTRATOR", nama: "Jabatan Administrator", kelompok_jabatan: "Jabatan Administrasi", level_standar_umum: 3 },
+    { id: 5, kode: "PENGAWAS", nama: "Jabatan Pengawas", kelompok_jabatan: "Jabatan Administrasi", level_standar_umum: 2 },
+    { id: 6, kode: "PELAKSANA", nama: "Jabatan Pelaksana", kelompok_jabatan: "Jabatan Administrasi", level_standar_umum: 1 },
+    { id: 7, kode: "JF_AHLI_UTAMA", nama: "JF Ahli Utama", kelompok_jabatan: "JF Keahlian", level_standar_umum: 4 },
+    { id: 8, kode: "JF_AHLI_MADYA", nama: "JF Ahli Madya", kelompok_jabatan: "JF Keahlian", level_standar_umum: 4 },
+    { id: 9, kode: "JF_AHLI_MUDA", nama: "JF Ahli Muda", kelompok_jabatan: "JF Keahlian", level_standar_umum: 3 },
+    { id: 10, kode: "JF_AHLI_PERTAMA", nama: "JF Ahli Pertama", kelompok_jabatan: "JF Keahlian", level_standar_umum: 2 },
+    { id: 11, kode: "JF_PENYELIA", nama: "JF Penyelia", kelompok_jabatan: "JF Keterampilan", level_standar_umum: 3 },
+    { id: 12, kode: "JF_MAHIR", nama: "JF Mahir", kelompok_jabatan: "JF Keterampilan", level_standar_umum: 2 },
+    { id: 13, kode: "JF_TERAMPIL", nama: "JF Terampil", kelompok_jabatan: "JF Keterampilan", level_standar_umum: 2 },
+    { id: 14, kode: "JF_PEMULA", nama: "JF Pemula", kelompok_jabatan: "JF Keterampilan", level_standar_umum: 1 },
   ];
 
   // Matriks lengkap map jenjang_id -> competency_kode -> target_level
@@ -106,29 +109,58 @@
 
   async function loadAllStandards() {
     const matrix: Record<number, Record<string, number>> = {};
-    for (const j of jabatanList) {
-      try {
-        const res = await ApiClient.get<any>(`/jabatan/${j.id}/standards`);
-        if (res.success && res.data && res.data.standards) {
-          standardsCache[j.id] = res.data.standards;
-          matrix[j.id] = {};
-          for (const s of res.data.standards) {
-            const compKode = s.competency?.kode || s.competency_kode;
-            if (compKode) {
-              matrix[j.id]![compKode] = s.target_level;
+
+    // 1. Coba ambil seluruh matriks sekaligus via /jabatan/standards
+    try {
+      const resAll = await ApiClient.get<any[]>("/jabatan/standards");
+      if (resAll.success && resAll.data && Array.isArray(resAll.data) && resAll.data.length > 0) {
+        for (const s of resAll.data) {
+          const jId = s.jenjang_jabatan_id;
+          if (!matrix[jId]) {
+            matrix[jId] = {};
+          }
+          const compKode = s.kode_kompetensi || s.competency?.kode || s.competency_kode;
+          if (compKode) {
+            matrix[jId]![compKode] = s.target_level;
+          }
+          if (!standardsCache[jId]) {
+            standardsCache[jId] = [];
+          }
+          standardsCache[jId].push(s);
+        }
+        fullMatrix = matrix;
+        return;
+      }
+    } catch (e) {
+      console.warn("Fallback to per-jabatan standards loading", e);
+    }
+
+    // 2. Fallback: ambil standar per jenjang secara paralel
+    await Promise.all(
+      jabatanList.map(async (j) => {
+        try {
+          const res = await ApiClient.get<any>(`/jabatan/${j.id}/standards`);
+          if (res.success && res.data && res.data.standards) {
+            standardsCache[j.id] = res.data.standards;
+            matrix[j.id] = {};
+            for (const s of res.data.standards) {
+              const compKode = s.kode_kompetensi || s.competency?.kode || s.competency_kode;
+              if (compKode) {
+                matrix[j.id]![compKode] = s.target_level;
+              }
             }
           }
+        } catch {
+          // Abaikan per item bila offline/gagal
         }
-      } catch {
-        // Abaikan per item bila offline/gagal
-      }
-    }
+      })
+    );
     fullMatrix = matrix;
   }
 
   async function selectJabatan(j: MasterJabatan) {
     selectedJabatan = j;
-    if (standardsCache[j.id]) {
+    if (standardsCache[j.id] && standardsCache[j.id].length > 0) {
       jabatanStandards = standardsCache[j.id]!;
       return;
     }
@@ -171,14 +203,30 @@
     }
   }
 
+  function normalizeKelompok(k: string | null | undefined): string {
+    if (!k) return "";
+    const str = k.toUpperCase().replace(/[\s_-]+/g, "");
+    if (str.includes("PIMPINANTINGGI") || str === "JPT") return "JPT";
+    if (str.includes("ADMINISTRASI")) return "ADMINISTRASI";
+    if (str.includes("KEAHLIAN")) return "JF_KEAHLIAN";
+    if (str.includes("KETERAMPILAN")) return "JF_KETERAMPILAN";
+    return str;
+  }
+
   const filteredJabatanList = $derived(
     selectedKelompok
-      ? jabatanList.filter((j) => j.kelompok_jabatan === selectedKelompok)
+      ? jabatanList.filter((j) => {
+          return (
+            j.kelompok_jabatan === selectedKelompok ||
+            normalizeKelompok(j.kelompok_jabatan) === normalizeKelompok(selectedKelompok)
+          );
+        })
       : jabatanList
   );
 
   function getKelompokLabel(k: string) {
-    switch (k) {
+    const norm = normalizeKelompok(k);
+    switch (norm) {
       case "JPT":
         return "JPT (Pimpinan Tinggi)";
       case "ADMINISTRASI":
@@ -359,9 +407,9 @@
             <div class="standards-cards-grid">
               {#each jabatanStandards as item}
                 {@const compInfo = competenciesList.find((c) => c.id === item.competency_id) || {
-                  kode: item.competency_kode || "-",
-                  nama: item.competency_nama || "-",
-                  kategori: "MANAJERIAL",
+                  kode: item.kode_kompetensi || item.competency_kode || "-",
+                  nama: item.nama_kompetensi || item.competency_nama || "-",
+                  kategori: item.kategori || "MANAJERIAL",
                 }}
                 <div class="standard-item-box">
                   <div class="std-box-top">

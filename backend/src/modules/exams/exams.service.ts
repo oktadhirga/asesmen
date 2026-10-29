@@ -5,6 +5,7 @@ import {
   participantAnswers,
   questions,
   questionOptions,
+  jenjangJabatan,
 } from "../../db/schema";
 import { eq, and, sql, inArray } from "drizzle-orm";
 import { ReportsService } from "../reports/reports.service";
@@ -223,7 +224,30 @@ export class ExamsService {
     const participant = await this.resolveParticipant(userId, participantId, userRole);
     const resolvedParticipantId = participant.id;
 
-    // Ambil semua soal SJT aktif
+    // Ambil data sesi peserta untuk menentukan target level ujian
+    let sessionTargetLevel: number | null = null;
+    if (participant.session_id) {
+      const [sessionInfo] = await db
+        .select({
+          id: assessmentSessions.id,
+          target_jenjang_id: assessmentSessions.target_jenjang_id,
+          level_standar_umum: jenjangJabatan.level_standar_umum,
+        })
+        .from(assessmentSessions)
+        .leftJoin(jenjangJabatan, eq(assessmentSessions.target_jenjang_id, jenjangJabatan.id))
+        .where(eq(assessmentSessions.id, participant.session_id))
+        .limit(1);
+
+      if (sessionInfo?.level_standar_umum) {
+        sessionTargetLevel = sessionInfo.level_standar_umum;
+      }
+    }
+
+    // Ambil soal SJT yang sesuai target level sesi asesmen (jika ada)
+    const questionCondition = sessionTargetLevel !== null
+      ? eq(questions.target_level, sessionTargetLevel)
+      : undefined;
+
     const allQuestions = await db
       .select({
         id: questions.id,
@@ -233,6 +257,7 @@ export class ExamsService {
         target_level: questions.target_level,
       })
       .from(questions)
+      .where(questionCondition)
       .orderBy(sql`${questions.id} ASC`);
 
     if (allQuestions.length === 0) {

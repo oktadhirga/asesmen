@@ -74,5 +74,27 @@ export class JabatanService {
       standards,
     };
   }
+
+  /**
+   * Mengambil seluruh matriks standar kompetensi untuk semua jenjang jabatan (126 baris)
+   */
+  static async getAllStandards() {
+    return await db
+      .select({
+        id: standarKompetensiJabatan.id,
+        jenjang_jabatan_id: standarKompetensiJabatan.jenjang_jabatan_id,
+        competency_id: standarKompetensiJabatan.competency_id,
+        kode_kompetensi: competencies.kode,
+        nama_kompetensi: competencies.nama,
+        kategori: competencies.kategori,
+        target_level: standarKompetensiJabatan.target_level,
+      })
+      .from(standarKompetensiJabatan)
+      .innerJoin(
+        competencies,
+        eq(standarKompetensiJabatan.competency_id, competencies.id)
+      )
+      .orderBy(standarKompetensiJabatan.jenjang_jabatan_id, competencies.id);
+  }
 }
 

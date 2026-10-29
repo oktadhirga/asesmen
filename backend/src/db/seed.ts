@@ -655,6 +655,549 @@ export const initialQuestions = [
       },
     ],
   },
+  // ==========================================
+  // LEVEL 1: BANK SOAL ASN JABATAN PELAKSANA (9 Dimensi x 2 Butir = 18 Butir)
+  // ==========================================
+  // 1. Integritas (KOMP-01) - Level 1 Soal 1
+  {
+    compKode: "KOMP-01",
+    kode_soal: "SJT-INT-L1-01",
+    skenario_kasus:
+      "Anda melihat rekan kerja di bagian administrasi sering menitipkan presensi kehadiran saat terlambat masuk kantor. Sebagai sesama staf pelaksana, tindakan yang paling tepat Anda ambil adalah...",
+    target_level: 1,
+    options: [
+      {
+        label: "A",
+        teks_opsi: "Mengingatkan rekan tersebut dengan sopan bahwa tindakan manipulasi presensi melanggar disiplin ASN dan menolak bila diminta membantu presensi titipan.",
+        bobot_nilai: 4,
+      },
+      {
+        label: "B",
+        teks_opsi: "Menghindari terlibat dalam tindakan tersebut dan berfokus pada kedisiplinan diri sendiri dalam menjalankan jam kerja kantor.",
+        bobot_nilai: 3,
+      },
+      {
+        label: "C",
+        teks_opsi: "Menyarankan rekan tersebut untuk mengajukan izin resmi secara tertulis kepada atasan jika berhalangan hadir tepat waktu.",
+        bobot_nilai: 2,
+      },
+      {
+        label: "D",
+        teks_opsi: "Membantu presensi rekan tersebut sesekali atas dasar solidaritas pertemanan agar yang bersangkutan tidak terkena potongan tunjangan.",
+        bobot_nilai: 1,
+      },
+    ],
+  },
+  // 1. Integritas (KOMP-01) - Level 1 Soal 2
+  {
+    compKode: "KOMP-01",
+    kode_soal: "SJT-INT-L1-02",
+    skenario_kasus:
+      "Seorang pemohon layanan memberikan sejumlah uang dalam amplop sebagai tanda terima kasih setelah Anda menyelesaikan pencetakan dokumen administrasinya sesuai SOP tanpa pungutan biaya. Respon Anda adalah...",
+    target_level: 1,
+    options: [
+      {
+        label: "A",
+        teks_opsi: "Menolak amplop tersebut dengan sopan dan tegas, serta menjelaskan bahwa seluruh layanan publik bebas biaya dan merupakan kewajiban tugas ASN.",
+        bobot_nilai: 4,
+      },
+      {
+        label: "B",
+        teks_opsi: "Menolak pemberian uang tersebut dan menyarankan pemohon mengisi survei kepuasan masyarakat di loket sebagai bentuk apresiasi.",
+        bobot_nilai: 3,
+      },
+      {
+        label: "C",
+        teks_opsi: "Menerima uang tersebut karena merasa tidak pernah meminta dan pemohon memberikannya secara ikhlas tanpa paksaan.",
+        bobot_nilai: 2,
+      },
+      {
+        label: "D",
+        teks_opsi: "Menerima amplop tersebut dan memasukkannya ke dalam kas ruangan untuk digunakan membeli makanan ringan bersama rekan kerja.",
+        bobot_nilai: 1,
+      },
+    ],
+  },
+  // 2. Kerjasama (KOMP-02) - Level 1 Soal 1
+  {
+    compKode: "KOMP-02",
+    kode_soal: "SJT-KS-L1-01",
+    skenario_kasus:
+      "Anda telah menyelesaikan tugas harian Anda lebih awal, sementara rekan kerja satu meja Anda tampak kewalahan menyusun rekapitulasi data arsip yang harus diserahkan sore ini. Sikap Anda adalah...",
+    target_level: 1,
+    options: [
+      {
+        label: "A",
+        teks_opsi: "Secara proaktif menawarkan bantuan kepada rekan tersebut untuk bersama-sama menyelesaikan rekapitulasi arsip agar target seksi tercapai tepat waktu.",
+        bobot_nilai: 4,
+      },
+      {
+        label: "B",
+        teks_opsi: "Menanyakan apakah ada bagian tugas sederhana yang bisa dibantu jika rekan tersebut memang merasa memerlukan bantuan tambahan.",
+        bobot_nilai: 3,
+      },
+      {
+        label: "C",
+        teks_opsi: "Menunggu instruksi atau perintah dari atasan sebelum memutuskan untuk membantu pekerjaan rekan kerja lain.",
+        bobot_nilai: 2,
+      },
+      {
+        label: "D",
+        teks_opsi: "Memanfaatkan waktu luang untuk urusan pribadi karena tugas pokok dan tanggung jawab mandiri Anda sudah selesai.",
+        bobot_nilai: 1,
+      },
+    ],
+  },
+  // 2. Kerjasama (KOMP-02) - Level 1 Soal 2
+  {
+    compKode: "KOMP-02",
+    kode_soal: "SJT-KS-L1-02",
+    skenario_kasus:
+      "Dalam kelompok kerja penyusunan berkas verifikasi, terjadi perbedaan pendapat mengenai pembagian nomor urut berkas yang memicu ketegangan antaranggota. Peran Anda dalam tim adalah...",
+    target_level: 1,
+    options: [
+      {
+        label: "A",
+        teks_opsi: "Mengajak rekan-rekan menenangkan diri, merujuk kembali pada panduan teknis yang berlaku, dan menyepakati pembagian secara adil bersama.",
+        bobot_nilai: 4,
+      },
+      {
+        label: "B",
+        teks_opsi: "Menyampaikan usulan solusi secara netral dan mengikuti keputusan mayoritas anggota kelompok demi kelancaran tugas.",
+        bobot_nilai: 3,
+      },
+      {
+        label: "C",
+        teks_opsi: "Menyerahkan penyelesaian perselisihan tersebut sepenuhnya kepada atasan atau ketua kelompok kerja.",
+        bobot_nilai: 2,
+      },
+      {
+        label: "D",
+        teks_opsi: "Memilih diam dan tidak ikut campur dalam diskusi agar tidak memperkeruh suasana kelompok kerja.",
+        bobot_nilai: 1,
+      },
+    ],
+  },
+  // 3. Komunikasi (KOMP-03) - Level 1 Soal 1
+  {
+    compKode: "KOMP-03",
+    kode_soal: "SJT-KOM-L1-01",
+    skenario_kasus:
+      "Anda menerima telepon dinas dari warga yang menyampaikan komplain dengan nada tinggi dan emosional karena berkas permohonannya belum selesai diproses. Sikap Anda saat menerima panggilan tersebut adalah...",
+    target_level: 1,
+    options: [
+      {
+        label: "A",
+        teks_opsi: "Mendengarkan keluhan dengan sabar dan tenang tanpa memotong pembicaraan, memohon maaf atas ketidaknyamanan, lalu mencatat nomor berkas untuk dicek statusnya.",
+        bobot_nilai: 4,
+      },
+      {
+        label: "B",
+        teks_opsi: "Mendengarkan keluhan secara singkat lalu segera menyambungkan panggilan ke pimpinan atau petugas yang berwenang.",
+        bobot_nilai: 3,
+      },
+      {
+        label: "C",
+        teks_opsi: "Meminta warga tersebut berbicara dengan nada santun terlebih dahulu sebelum Anda bersedia mendengarkan permasalahannya.",
+        bobot_nilai: 2,
+      },
+      {
+        label: "D",
+        teks_opsi: "Menjelaskan dengan nada tegas bahwa keterlambatan bukan kesalahan Anda melainkan akibat antrean sistem yang padat.",
+        bobot_nilai: 1,
+      },
+    ],
+  },
+  // 3. Komunikasi (KOMP-03) - Level 1 Soal 2
+  {
+    compKode: "KOMP-03",
+    kode_soal: "SJT-KOM-L1-02",
+    skenario_kasus:
+      "Atasan memberikan arahan lisan tugas penataan arsip digital dengan istilah teknis yang belum sepenuhnya Anda pahami. Langkah yang paling tepat Anda lakukan adalah...",
+    target_level: 1,
+    options: [
+      {
+        label: "A",
+        teks_opsi: "Mengonfirmasi kembali poin-poin yang belum dipahami secara sopan dan mencatat penjelasan atasan agar tidak terjadi kekeliruan pengerjaan.",
+        bobot_nilai: 4,
+      },
+      {
+        label: "B",
+        teks_opsi: "Bertanya kepada rekan kerja senior di ruangan mengenai maksud petunjuk kerja yang disampaikan oleh atasan.",
+        bobot_nilai: 3,
+      },
+      {
+        label: "C",
+        teks_opsi: "Mengerjakan tugas sesuai pemahaman awal sendiri dan baru bertanya jika nantinya menemukan hambatan di tengah jalan.",
+        bobot_nilai: 2,
+      },
+      {
+        label: "D",
+        teks_opsi: "Mengiyakan instruksi atasan tanpa bertanya karena sungkan dianggap lambat dalam memahami arahan pimpinan.",
+        bobot_nilai: 1,
+      },
+    ],
+  },
+  // 4. Orientasi pada Hasil (KOMP-04) - Level 1 Soal 1
+  {
+    compKode: "KOMP-04",
+    kode_soal: "SJT-OPH-L1-01",
+    skenario_kasus:
+      "Saat Anda sedang menyelesaikan target entri data laporan bulanan, koneksi internet kantor mengalami gangguan sementara menjelang jam pulang kerja. Tindakan Anda adalah...",
+    target_level: 1,
+    options: [
+      {
+        label: "A",
+        teks_opsi: "Berinisiatif menyelesaikan entri data secara luring (offline) terlebih dahulu dan menunggu sinkronisasi agar target harian tuntas sebelum meninggalkan kantor.",
+        bobot_nilai: 4,
+      },
+      {
+        label: "B",
+        teks_opsi: "Menyimpan draf pekerjaan yang ada dan datang lebih awal esok pagi untuk menuntaskan sisa entri data sebelum jam layanan dibuka.",
+        bobot_nilai: 3,
+      },
+      {
+        label: "C",
+        teks_opsi: "Melaporkan gangguan jaringan kepada staf pengelola IT dan menunggu koneksi pulih tanpa melakukan tindakan alternatif.",
+        bobot_nilai: 2,
+      },
+      {
+        label: "D",
+        teks_opsi: "Menghentikan pekerjaan dan langsung bersiap pulang karena gangguan internet di luar tanggung jawab Anda.",
+        bobot_nilai: 1,
+      },
+    ],
+  },
+  // 4. Orientasi pada Hasil (KOMP-04) - Level 1 Soal 2
+  {
+    compKode: "KOMP-04",
+    kode_soal: "SJT-OPH-L1-02",
+    skenario_kasus:
+      "Anda menemukan adanya kekeliruan penomoran pada beberapa lembar surat dinas yang sudah selesai dicetak dan tinggal menunggu stempel dinas. Tindakan yang Anda ambil adalah...",
+    target_level: 1,
+    options: [
+      {
+        label: "A",
+        teks_opsi: "Segera memperbaiki penomoran dokumen di komputer, mencetak ulang lembar yang salah, dan memastikan seluruh dokumen rapi sebelum diedarkan.",
+        bobot_nilai: 4,
+      },
+      {
+        label: "B",
+        teks_opsi: "Mengoreksi kesalahan nomor secara manual menggunakan tulisan tangan berparaf resmi agar tidak menghabiskan banyak kertas cetak.",
+        bobot_nilai: 3,
+      },
+      {
+        label: "C",
+        teks_opsi: "Meneruskan surat tersebut jika kesalahan penomoran dianggap minor dan tidak mengubah esensi isi surat dinas.",
+        bobot_nilai: 2,
+      },
+      {
+        label: "D",
+        teks_opsi: "Melaporkan kepada rekan yang mengetik surat dan membiarkan rekan tersebut yang menentukan tindak lanjutnya.",
+        bobot_nilai: 1,
+      },
+    ],
+  },
+  // 5. Pelayanan Publik (KOMP-05) - Level 1 Soal 1
+  {
+    compKode: "KOMP-05",
+    kode_soal: "SJT-PLP-L1-01",
+    skenario_kasus:
+      "Seorang warga lanjut usia datang ke loket pelayanan Anda dengan berkas permohonan yang belum lengkap dan tampak kebingungan memahami formulir yang harus diisi. Pelayanan yang Anda berikan adalah...",
+    target_level: 1,
+    options: [
+      {
+        label: "A",
+        teks_opsi: "Menyambut dengan ramah, memandu pengisian formulir dengan sabar, serta membantu memeriksa kekurangan berkas secara jelas dan santun.",
+        bobot_nilai: 4,
+      },
+      {
+        label: "B",
+        teks_opsi: "Meminta warga tersebut duduk di ruang tunggu sembari Anda membantu melengkapi berkas administrasi yang belum lengkap.",
+        bobot_nilai: 3,
+      },
+      {
+        label: "C",
+        teks_opsi: "Memberikan lembar petunjuk alur pelayanan dan memintanya membaca panduan terlebih dahulu sebelum menghadap loket kembali.",
+        bobot_nilai: 2,
+      },
+      {
+        label: "D",
+        teks_opsi: "Menyarankan agar warga tersebut pulang dan meminta bantuan keluarga yang lebih memahami tata cara administrasi.",
+        bobot_nilai: 1,
+      },
+    ],
+  },
+  // 5. Pelayanan Publik (KOMP-05) - Level 1 Soal 2
+  {
+    compKode: "KOMP-05",
+    kode_soal: "SJT-PLP-L1-02",
+    skenario_kasus:
+      "Tepat pada saat jam istirahat siang, seorang pemohon layanan tiba di loket Anda setelah menempuh perjalanan jauh dari pelosok desa untuk mengurus surat keterangan mendesak. Sikap Anda adalah...",
+    target_level: 1,
+    options: [
+      {
+        label: "A",
+        teks_opsi: "Tetap melayani permohonan warga tersebut hingga selesai sebelum beristirahat, mengingat urgensi dan jarak tempuh pemohon.",
+        bobot_nilai: 4,
+      },
+      {
+        label: "B",
+        teks_opsi: "Menerima berkas pemohon, mempersilakannya menunggu di ruang tunggu, dan berjanji memprosesnya tepat saat jam istirahat berakhir.",
+        bobot_nilai: 3,
+      },
+      {
+        label: "C",
+        teks_opsi: "Meminta pemohon kembali lagi setelah jam istirahat siang selesai sesuai jadwal operasional loket yang tertera.",
+        bobot_nilai: 2,
+      },
+      {
+        label: "D",
+        teks_opsi: "Mengarahkan pemohon ke petugas piket lain karena Anda sudah bersiap keluar untuk makan siang.",
+        bobot_nilai: 1,
+      },
+    ],
+  },
+  // 6. Pengembangan Diri dan Orang Lain (KOMP-06) - Level 1 Soal 1
+  {
+    compKode: "KOMP-06",
+    kode_soal: "SJT-PDO-L1-01",
+    skenario_kasus:
+      "Instansi Anda meluncurkan aplikasi persuratan digital berbasis web, dan Anda merasa belum terbiasa mengoperasikan fitur-fitur baru di dalamnya. Upaya pengembangan diri yang Anda lakukan adalah...",
+    target_level: 1,
+    options: [
+      {
+        label: "A",
+        teks_opsi: "Mempelajari modul panduan teknis secara mandiri, menyimak tutorial video, dan tekun mempraktikkannya hingga lancar mengoperasikan sistem.",
+        bobot_nilai: 4,
+      },
+      {
+        label: "B",
+        teks_opsi: "Meminta bimbingan rekan kerja sejawat yang sudah lebih mahir saat waktu luang di kantor.",
+        bobot_nilai: 3,
+      },
+      {
+        label: "C",
+        teks_opsi: "Menggunakan aplikasi tersebut sebisanya dan tetap mengandalkan pencatatan manual jika menemui kesulitan teknis.",
+        bobot_nilai: 2,
+      },
+      {
+        label: "D",
+        teks_opsi: "Menunggu diselenggarakannya pelatihan atau bimbingan teknis resmi dari dinas sebelum mulai aktif memakai aplikasi.",
+        bobot_nilai: 1,
+      },
+    ],
+  },
+  // 6. Pengembangan Diri dan Orang Lain (KOMP-06) - Level 1 Soal 2
+  {
+    compKode: "KOMP-06",
+    kode_soal: "SJT-PDO-L1-02",
+    skenario_kasus:
+      "Seorang staf pelaksana baru di seksi Anda tampak ragu-ragu dan kebingungan dalam menjalankan prosedur pengarsipan berkas harian. Tindakan Anda adalah...",
+    target_level: 1,
+    options: [
+      {
+        label: "A",
+        teks_opsi: "Menyapa dengan hangat, membagikan metode pengarsipan yang rapi dan efektif, serta menawarkan bantuan jika ia menemui kendala.",
+        bobot_nilai: 4,
+      },
+      {
+        label: "B",
+        teks_opsi: "Memberikan berkas contoh yang sudah tersusun rapi sebagai bahan referensi mandiri baginya.",
+        bobot_nilai: 3,
+      },
+      {
+        label: "C",
+        teks_opsi: "Menyarankan staf baru tersebut untuk berkonsultasi langsung kepada kepala seksi mengenai standar kerja pengarsipan.",
+        bobot_nilai: 2,
+      },
+      {
+        label: "D",
+        teks_opsi: "Membiarkan staf tersebut belajar mandiri melalui pengalaman harian agar terbentuk kemandirian kerja.",
+        bobot_nilai: 1,
+      },
+    ],
+  },
+  // 7. Mengelola Perubahan (KOMP-07) - Level 1 Soal 1
+  {
+    compKode: "KOMP-07",
+    kode_soal: "SJT-MPR-L1-01",
+    skenario_kasus:
+      "Pimpinan mengumumkan peralihan sistem pencatatan kegiatan kerja harian dari buku manual ke aplikasi mobile yang mewajibkan input berkala. Sikap Anda menghadapi perubahan tersebut adalah...",
+    target_level: 1,
+    options: [
+      {
+        label: "A",
+        teks_opsi: "Menyambut positif pembaruan sistem, segera mengunduh aplikasi, dan membiasakan diri mendokumentasikan pekerjaan harian sesuai petunjuk.",
+        bobot_nilai: 4,
+      },
+      {
+        label: "B",
+        teks_opsi: "Mempelajari tata cara pelaporan mobile secara bertahap dengan melihat contoh pengisian dari rekan sejawat.",
+        bobot_nilai: 3,
+      },
+      {
+        label: "C",
+        teks_opsi: "Merasa terbebani oleh aturan baru namun tetap melaksanakannya agar tidak terkena sanksi administratif.",
+        bobot_nilai: 2,
+      },
+      {
+        label: "D",
+        teks_opsi: "Mengeluhkan perubahan sistem kepada rekan kerja karena merasa metode pencatatan manual sebelumnya sudah cukup efektif.",
+        bobot_nilai: 1,
+      },
+    ],
+  },
+  // 7. Mengelola Perubahan (KOMP-07) - Level 1 Soal 2
+  {
+    compKode: "KOMP-07",
+    kode_soal: "SJT-MPR-L1-02",
+    skenario_kasus:
+      "Tata letak ruangan kerja Anda diubah menjadi ruang kerja bersama (open space) tanpa sekat partisi, yang pada awalnya terasa agak bising dan kurang privat. Sikap Anda adalah...",
+    target_level: 1,
+    options: [
+      {
+        label: "A",
+        teks_opsi: "Cepat menyesuaikan diri dengan suasana baru, menata meja agar rapi, dan memanfaatkan suasana terbuka untuk mempercepat koordinasi dengan tim.",
+        bobot_nilai: 4,
+      },
+      {
+        label: "B",
+        teks_opsi: "Berupaya membiasakan diri bekerja di ruangan terbuka dan membatasi obrolan santai agar konsentrasi kerja tetap terjaga.",
+        bobot_nilai: 3,
+      },
+      {
+        label: "C",
+        teks_opsi: "Menyampaikan usul kepada bagian umum agar dipasang kembali partisi penyekat di meja kerja Anda.",
+        bobot_nilai: 2,
+      },
+      {
+        label: "D",
+        teks_opsi: "Sering mencari tempat kerja di luar ruangan kantor karena merasa tidak bisa fokus di ruang terbuka.",
+        bobot_nilai: 1,
+      },
+    ],
+  },
+  // 8. Pengambilan Keputusan (KOMP-08) - Level 1 Soal 1
+  {
+    compKode: "KOMP-08",
+    kode_soal: "SJT-PKP-L1-01",
+    skenario_kasus:
+      "Saat pimpinan sedang dinas luar kota, seorang perwakilan instansi lain datang meminta salinan rekapitulasi data kepegawaian yang bersifat segera. Keputusan yang Anda ambil adalah...",
+    target_level: 1,
+    options: [
+      {
+        label: "A",
+        teks_opsi: "Menghubungi pimpinan melalui telepon dinas/pesan resmi untuk meminta persetujuan dan arahan sebelum menyerahkan salinan data.",
+        bobot_nilai: 4,
+      },
+      {
+        label: "B",
+        teks_opsi: "Menyiapkan berkas data terlebih dahulu dan baru menyerahkannya setelah pimpinan kembali ke kantor.",
+        bobot_nilai: 3,
+      },
+      {
+        label: "C",
+        teks_opsi: "Langsung memberikan salinan data tersebut demi mempercepat urusan instansi pemohon tanpa konfirmasi atasan.",
+        bobot_nilai: 2,
+      },
+      {
+        label: "D",
+        teks_opsi: "Menolak memberikan data sama sekali dan meminta pemohon menunggu hingga pimpinan masuk kerja kembali.",
+        bobot_nilai: 1,
+      },
+    ],
+  },
+  // 8. Pengambilan Keputusan (KOMP-08) - Level 1 Soal 2
+  {
+    compKode: "KOMP-08",
+    kode_soal: "SJT-PKP-L1-02",
+    skenario_kasus:
+      "Anda memiliki dua tugas administrasi rutin yang harus diselesaikan sore ini: menyusun rekap presensi dan mencetak bahan rapat pimpinan esok pagi. Cara Anda menentukan urutan pengerjaan adalah...",
+    target_level: 1,
+    options: [
+      {
+        label: "A",
+        teks_opsi: "Menganalisis urgensi jadwal, mendahulukan pencetakan bahan rapat dinas esok pagi, lalu menuntaskan rekap presensi sebelum jam kerja berakhir.",
+        bobot_nilai: 4,
+      },
+      {
+        label: "B",
+        teks_opsi: "Mengerjakan kedua tugas secara bergantian setengah bagian agar keduanya sama-sama berjalan.",
+        bobot_nilai: 3,
+      },
+      {
+        label: "C",
+        teks_opsi: "Mengerjakan tugas yang paling mudah dan membutuhkan waktu paling cepat terlebih dahulu.",
+        bobot_nilai: 2,
+      },
+      {
+        label: "D",
+        teks_opsi: "Meminta atasan langsung untuk menentukan tugas mana yang harus diselesaikan lebih dulu.",
+        bobot_nilai: 1,
+      },
+    ],
+  },
+  // 9. Perekat Bangsa (KOMP-09) - Level 1 Soal 1
+  {
+    compKode: "KOMP-09",
+    kode_soal: "SJT-PKB-L1-01",
+    skenario_kasus:
+      "Di ruang pelayanan, seorang warga dari kelompok rentan atau daerah terpencil mengalami kendala berbahasa Indonesia formal saat menyampaikan permohonannya. Sikap Anda adalah...",
+    target_level: 1,
+    options: [
+      {
+        label: "A",
+        teks_opsi: "Melayani dengan ramah dan penuh kesabaran, menggunakan bahasa tutur sederhana yang mudah dipahami agar warga merasa dihargai dan terbantu.",
+        bobot_nilai: 4,
+      },
+      {
+        label: "B",
+        teks_opsi: "Meminta bantuan rekan kerja lain yang memahami bahasa daerah warga tersebut untuk membantu menjembatani komunikasi.",
+        bobot_nilai: 3,
+      },
+      {
+        label: "C",
+        teks_opsi: "Mengulang pertanyaan berkali-kali dengan suara lebih lantang agar warga dapat mengerti maksud Anda.",
+        bobot_nilai: 2,
+      },
+      {
+        label: "D",
+        teks_opsi: "Meminta warga tersebut mengajak pendamping yang fasih berbahasa Indonesia sebelum mengurus dokumen di loket.",
+        bobot_nilai: 1,
+      },
+    ],
+  },
+  // 9. Perekat Bangsa (KOMP-09) - Level 1 Soal 2
+  {
+    compKode: "KOMP-09",
+    kode_soal: "SJT-PKB-L1-02",
+    skenario_kasus:
+      "Dalam ruang istirahat kantor, seorang rekan kerja menceritakan lelucon bernuansa stereotipe suku tertentu yang membuat beberapa pegawai lain tampak tidak nyaman. Tindakan Anda adalah...",
+    target_level: 1,
+    options: [
+      {
+        label: "A",
+        teks_opsi: "Mengingatkan rekan tersebut secara sopan dan empat mata bahwa lelucon bernuansa SARA tidak pantas di lingkungan kerja ASN yang menjunjung keberagaman.",
+        bobot_nilai: 4,
+      },
+      {
+        label: "B",
+        teks_opsi: "Mengalihkan topik pembicaraan dengan santun ke hal lain yang lebih positif dan inklusif bagi semua orang.",
+        bobot_nilai: 3,
+      },
+      {
+        label: "C",
+        teks_opsi: "Memilih diam dan tidak menanggapi lelucon tersebut demi menjaga hubungan baik dengan rekan kerja.",
+        bobot_nilai: 2,
+      },
+      {
+        label: "D",
+        teks_opsi: "Ikut tertawa bersama sekadar untuk menjaga keakraban suasana obrolan di ruang istirahat.",
+        bobot_nilai: 1,
+      },
+    ],
+  },
 ];
 
 export const initialUsers = [

@@ -14,6 +14,16 @@ export const jabatanRoute = new Elysia()
         };
       })
 
+      // 1.1 GET /api/jabatan/standards (Seluruh Matriks 126 Standar Kompetensi)
+      .get("/standards", async () => {
+        const data = await JabatanService.getAllStandards();
+        return {
+          success: true,
+          total: data.length,
+          data,
+        };
+      })
+
       // 2. GET /api/jabatan/:id/standards (Matriks 9 Standar Kompetensi Jabatan)
       .get(
         "/:id/standards",
