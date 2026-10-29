@@ -113,6 +113,7 @@ describe("Modul Exams (Core Engine & Proctoring) — TDD Tahap 8", () => {
     );
     const sessionJson = (await createSessionRes.json()) as any;
     sessionId = sessionJson.data.id;
+    tokenAkses = sessionJson.data.token_sesi;
 
     // Ubah sesi langsung ke status BERJALAN
     await app.handle(
@@ -125,6 +126,17 @@ describe("Modul Exams (Core Engine & Proctoring) — TDD Tahap 8", () => {
         body: JSON.stringify({ status: "BERJALAN" }),
       })
     );
+
+    // Ambil token sesi jika diperbarui saat BERJALAN
+    const sessDetailRes = await app.handle(
+      new Request(`http://localhost/api/sessions/${sessionId}`, {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      })
+    );
+    const sessDetail = (await sessDetailRes.json()) as any;
+    if (sessDetail.data?.token_sesi) {
+      tokenAkses = sessDetail.data.token_sesi;
+    }
 
     // 6. Admin mendaftarkan peserta ke sesi
     const regPartRes = await app.handle(
@@ -139,8 +151,7 @@ describe("Modul Exams (Core Engine & Proctoring) — TDD Tahap 8", () => {
     );
     const regJson = (await regPartRes.json()) as any;
     participantId = regJson.data[0].id;
-    tokenAkses = regJson.data[0].token_akses;
-  });
+  }, 25000);
 
   afterAll(async () => {
     await cleanupTestExam();

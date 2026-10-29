@@ -115,6 +115,7 @@ describe("Modul Reports (Kalkulasi JPM & Radar Chart) — TDD Tahap 9", () => {
     );
     const sessionJson = (await createSessionRes.json()) as any;
     sessionId = sessionJson.data.id;
+    let tokenSesi = sessionJson.data.token_sesi;
 
     // Ubah status sesi ke BERJALAN
     await app.handle(
@@ -127,6 +128,16 @@ describe("Modul Reports (Kalkulasi JPM & Radar Chart) — TDD Tahap 9", () => {
         body: JSON.stringify({ status: "BERJALAN" }),
       })
     );
+
+    const sessDetailRes = await app.handle(
+      new Request(`http://localhost/api/sessions/${sessionId}`, {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      })
+    );
+    const sessDetail = (await sessDetailRes.json()) as any;
+    if (sessDetail.data?.token_sesi) {
+      tokenSesi = sessDetail.data.token_sesi;
+    }
 
     // Daftarkan peserta
     const regRes = await app.handle(
@@ -141,7 +152,6 @@ describe("Modul Reports (Kalkulasi JPM & Radar Chart) — TDD Tahap 9", () => {
     );
     const regJson = (await regRes.json()) as any;
     participantId = regJson.data[0].id;
-    const tokenAkses = regJson.data[0].token_akses;
 
     // 6. Peserta memulai ujian
     await app.handle(
@@ -153,7 +163,7 @@ describe("Modul Reports (Kalkulasi JPM & Radar Chart) — TDD Tahap 9", () => {
         },
         body: JSON.stringify({
           session_id: sessionId,
-          token_akses: tokenAkses,
+          token_akses: tokenSesi,
         }),
       })
     );

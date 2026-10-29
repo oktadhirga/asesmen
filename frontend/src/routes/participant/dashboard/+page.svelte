@@ -13,7 +13,6 @@
 
   interface MySessionItem {
     participant_id: number;
-    token_akses: string;
     status_peserta: "BELUM_MULAI" | "SEDANG_MENGERJAKAN" | "SELESAI";
     waktu_login: string | null;
     waktu_submit: string | null;

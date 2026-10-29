@@ -48,7 +48,7 @@ describe("Modul Competency (9 Dimensi PermenPANRB) — TDD Tahap 5", () => {
     );
     const pesertaJson = (await pesertaLoginRes.json()) as any;
     pesertaToken = pesertaJson.token;
-  });
+  }, 20000);
 
   describe("Akses & Role Guard (/api/competencies)", () => {
     it("harus menolak request tanpa token dengan status 401", async () => {

@@ -43,18 +43,6 @@ export interface ListSessionsParams {
 
 export class SessionsService {
   /**
-   * Helper untuk meng-generate token akses ujian peserta (format: ASN-XXXXXX)
-   */
-  static generateTokenAkses(): string {
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    let token = "ASN-";
-    for (let i = 0; i < 6; i++) {
-      token += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return token;
-  }
-
-  /**
    * Helper untuk meng-generate token sesi kolektif (format: 6 karakter alfanumerik kapital, e.g. TRG83K)
    */
   static generateTokenSesi(): string {
@@ -456,26 +444,9 @@ export class SessionsService {
         throw new Error(`Peserta dengan user_id ${userId} sudah terdaftar pada sesi ini.`);
       }
 
-      // Pastikan token unik
-      let token = this.generateTokenAkses();
-      let isTokenDuplicate = true;
-      while (isTokenDuplicate) {
-        const check = await db
-          .select({ id: sessionParticipants.id })
-          .from(sessionParticipants)
-          .where(eq(sessionParticipants.token_akses, token))
-          .limit(1);
-        if (check.length === 0) {
-          isTokenDuplicate = false;
-        } else {
-          token = this.generateTokenAkses();
-        }
-      }
-
       const [res] = await db.insert(sessionParticipants).values({
         session_id: sessionId,
         user_id: userId,
-        token_akses: token,
         status: "TERDAFTAR",
       });
 
@@ -483,7 +454,6 @@ export class SessionsService {
         id: Number(res.insertId),
         session_id: sessionId,
         user_id: userId,
-        token_akses: token,
         status: "TERDAFTAR",
       });
     }
@@ -500,7 +470,6 @@ export class SessionsService {
         id: sessionParticipants.id,
         session_id: sessionParticipants.session_id,
         user_id: sessionParticipants.user_id,
-        token_akses: sessionParticipants.token_akses,
         status: sessionParticipants.status,
         waktu_login: sessionParticipants.waktu_login,
         waktu_submit: sessionParticipants.waktu_submit,
@@ -591,16 +560,11 @@ export class SessionsService {
       throw new Error("Token akses tidak valid atau Anda tidak terdaftar pada sesi ini.");
     }
 
-    // 3. Validasi token (token sesi kolektif atau fallback token individual)
+    // 3. Validasi token sesi kolektif
     const inputToken = tokenAkses.trim().toUpperCase();
     const expectedSessionToken = (session.token_sesi || "").trim().toUpperCase();
-    const expectedParticipantToken = (participant.token_akses || "").trim().toUpperCase();
 
-    const isMatch =
-      (expectedSessionToken && inputToken === expectedSessionToken) ||
-      (expectedParticipantToken && inputToken === expectedParticipantToken);
-
-    if (!isMatch) {
+    if (!expectedSessionToken || inputToken !== expectedSessionToken) {
       throw new Error("Token akses tidak valid atau Anda tidak terdaftar pada sesi ini.");
     }
 
@@ -620,7 +584,6 @@ export class SessionsService {
       participant: {
         id: participant.id,
         status: participant.status,
-        token_akses: participant.token_akses,
       },
     };
   }
@@ -645,7 +608,6 @@ export class SessionsService {
         target_jenjang_nama: jenjangJabatan.nama,
         target_level: jenjangJabatan.level_standar_umum,
         participant_id: sessionParticipants.id,
-        token_akses: sessionParticipants.token_akses,
         participant_status: sessionParticipants.status,
         waktu_login: sessionParticipants.waktu_login,
         waktu_submit: sessionParticipants.waktu_submit,
@@ -683,7 +645,6 @@ export class SessionsService {
       participant_status: r.participant_status,
       status_peserta: r.participant_status,
       token_sesi: r.token_sesi,
-      token_akses: r.token_akses,
       waktu_login: r.waktu_login,
       waktu_submit: r.waktu_submit,
       total_score: Number(r.total_score || 0),

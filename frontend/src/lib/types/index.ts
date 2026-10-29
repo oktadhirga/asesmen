@@ -118,7 +118,6 @@ export interface SessionParticipant {
   session_id: number;
   user_id: number;
   status: ParticipantStatus;
-  token_akses: string;
   waktu_login: string | null;
   waktu_submit: string | null;
   tab_switch_count: number;

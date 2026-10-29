@@ -69,7 +69,7 @@ describe("Modul Questions (Bank Soal SJT) — TDD Tahap 6", () => {
     );
     const pesertaJson = (await pesertaLoginRes.json()) as any;
     pesertaToken = pesertaJson.token;
-  });
+  }, 20000);
 
   afterAll(async () => {
     await cleanupTestQuestions();

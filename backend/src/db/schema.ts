@@ -170,7 +170,6 @@ export const sessionParticipants = mysqlTable("session_participants", {
   id: int("id").primaryKey().autoincrement(),
   session_id: int("session_id").references(() => assessmentSessions.id),
   user_id: int("user_id").references(() => users.id),
-  token_akses: varchar("token_akses", { length: 50 }),
   status: mysqlEnum("status", ["TERDAFTAR", "SEDANG_MENGERJAKAN", "SELESAI"])
     .default("TERDAFTAR")
     .notNull(),

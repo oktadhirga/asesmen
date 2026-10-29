@@ -91,6 +91,14 @@ async function runMigration() {
       await conn.query("ALTER TABLE assessment_sessions ADD COLUMN token_sesi varchar(20) NULL");
     }
 
+    // Check session_participants columns
+    const [partCols]: any = await conn.query("SHOW COLUMNS FROM session_participants");
+    const partColNames = partCols.map((c: any) => c.Field);
+    if (partColNames.includes("token_akses")) {
+      console.log("Menghapus kolom token_akses dari session_participants (beralih ke token_sesi)...");
+      await conn.query("ALTER TABLE session_participants DROP COLUMN token_akses");
+    }
+
     console.log("✅ Migrasi skema database berhasil selesai!");
   } catch (err) {
     console.error("❌ Gagal migrasi skema:", err);

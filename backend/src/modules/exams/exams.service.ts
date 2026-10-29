@@ -102,16 +102,11 @@ export class ExamsService {
       );
     }
 
-    // Validasi token (token sesi kolektif atau fallback token individual)
+    // Validasi token sesi kolektif
     const inputToken = tokenAkses.trim().toUpperCase();
     const expectedSessionToken = (session.token_sesi || "").trim().toUpperCase();
-    const expectedParticipantToken = (participant.token_akses || "").trim().toUpperCase();
 
-    const isMatch =
-      (expectedSessionToken && inputToken === expectedSessionToken) ||
-      (expectedParticipantToken && inputToken === expectedParticipantToken);
-
-    if (!isMatch) {
+    if (!expectedSessionToken || inputToken !== expectedSessionToken) {
       throw new Error(
         "Token akses tidak valid atau Anda tidak terdaftar dalam sesi ini."
       );

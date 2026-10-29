@@ -81,7 +81,7 @@ describe("Database Schema Definitions (TDD Tahap 1 & Tahap 14.1)", () => {
     expect(cols.id).toBeDefined();
     expect(cols.session_id).toBeDefined();
     expect(cols.user_id).toBeDefined();
-    expect(cols.token_akses).toBeDefined();
+    expect((cols as any).token_akses).toBeUndefined();
     expect(cols.status).toBeDefined();
     expect(cols.tab_switch_count).toBeDefined();
     expect(cols.total_score).toBeDefined();

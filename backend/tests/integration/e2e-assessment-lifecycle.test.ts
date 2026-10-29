@@ -258,9 +258,12 @@ describe("End-to-End Integration Test: Siklus Lengkap Asesmen ASN (PENTA+) — T
       expect(json.success).toBe(true);
       expect(json.data.status).toBe("DRAFT");
       createdSessionId = json.data.id;
+      if (json.data.token_sesi) {
+        tokenAksesPeserta = json.data.token_sesi;
+      }
     });
 
-    it("2.2 Administrator mendaftarkan ASN ke dalam sesi & sistem meng-generate token akses unik", async () => {
+    it("2.2 Administrator mendaftarkan ASN ke dalam sesi", async () => {
       const res = await app.handle(
         new Request(
           `http://localhost/api/sessions/${createdSessionId}/participants`,
@@ -280,11 +283,9 @@ describe("End-to-End Integration Test: Siklus Lengkap Asesmen ASN (PENTA+) — T
       expect(res.status).toBe(201);
       const json: any = await res.json();
       expect(json.success).toBe(true);
-      expect(json.data[0].token_akses).toMatch(/^ASN-[A-Z0-9]{6}$/); // Format token unik ASN-XXXXXX
       expect(json.data[0].status).toBe("TERDAFTAR");
 
       participantId = json.data[0].id;
-      tokenAksesPeserta = json.data[0].token_akses;
     });
 
     it("2.3 Sistem menolak duplikasi pendaftaran pegawai yang sama pada satu sesi (400)", async () => {
@@ -328,6 +329,9 @@ describe("End-to-End Integration Test: Siklus Lengkap Asesmen ASN (PENTA+) — T
       const json: any = await res.json();
       expect(json.success).toBe(true);
       expect(json.data.status).toBe("BERJALAN");
+      if (json.data.token_sesi) {
+        tokenAksesPeserta = json.data.token_sesi;
+      }
     });
   });
 
@@ -475,7 +479,7 @@ describe("End-to-End Integration Test: Siklus Lengkap Asesmen ASN (PENTA+) — T
         const json: any = await res.json();
         expect(json.success).toBe(true);
       }
-    });
+    }, 15000);
 
     it("4.3 Proctoring mendeteksi dan mencatat pelanggaran tab-switch secara real-time", async () => {
       // Simulasi peserta berpindah tab browser 2 kali

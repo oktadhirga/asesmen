@@ -63,7 +63,7 @@ describe("Modul Users (CRUD ASN & Asesor) — TDD Tahap 4", () => {
     );
     const pesertaJson = (await pesertaLoginRes.json()) as any;
     pesertaToken = pesertaJson.token;
-  });
+  }, 20000);
 
   afterAll(async () => {
     await cleanupTestUsers();

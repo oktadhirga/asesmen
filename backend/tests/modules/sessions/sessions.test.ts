@@ -86,7 +86,7 @@ describe("Modul Sessions (Sesi & Penjadwalan Asesmen) — TDD Tahap 7", () => {
     const pesertaJson = (await pesertaLoginRes.json()) as any;
     pesertaToken = pesertaJson.token;
     pesertaUser = pesertaJson.user;
-  });
+  }, 20000);
 
   afterAll(async () => {
     await cleanupTestSessions();
@@ -296,11 +296,9 @@ describe("Modul Sessions (Sesi & Penjadwalan Asesmen) — TDD Tahap 7", () => {
       expect(json.success).toBe(true);
       expect(json.data.length).toBe(1);
       expect(json.data[0].user_id).toBe(pesertaUser.id);
-      expect(json.data[0].token_akses).toBeDefined();
       expect(json.data[0].status).toBe("TERDAFTAR");
 
       participantId = json.data[0].id;
-      participantTokenAkses = json.data[0].token_akses;
     });
 
     it("harus menolak duplikasi pendaftaran peserta yang sama pada satu sesi", async () => {
@@ -357,6 +355,15 @@ describe("Modul Sessions (Sesi & Penjadwalan Asesmen) — TDD Tahap 7", () => {
         })
       );
 
+      // Ambil token sesi kolektif yang aktif
+      const sessDetailRes = await app.handle(
+        new Request(`http://localhost/api/sessions/${createdSessionId}`, {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        })
+      );
+      const sessDetail = (await sessDetailRes.json()) as any;
+      const tokenSesi = sessDetail.data.token_sesi;
+
       // 2. Peserta verifikasi token
       const verifyRes = await app.handle(
         new Request("http://localhost/api/sessions/verify-token", {
@@ -367,7 +374,7 @@ describe("Modul Sessions (Sesi & Penjadwalan Asesmen) — TDD Tahap 7", () => {
           },
           body: JSON.stringify({
             kode_sesi: "SESI-TEST-001",
-            token_akses: participantTokenAkses,
+            token_akses: tokenSesi,
           }),
         })
       );

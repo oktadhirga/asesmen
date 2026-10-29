@@ -39,7 +39,7 @@ Database MySQL `ases_men` telah memiliki 11 tabel fisik (7 tabel inti + 4 tabel 
 3. `questions`: Skenario studi kasus birokrasi SJT dan target level jabatan (1-4).
 4. `question_options`: Pilihan respon A, B, C, D dengan bobot nilai tepat 1 s.d. 4.
 5. `assessment_sessions`: Sesi asesmen berbatas waktu dengan kode sesi unik, target jenjang foreign key `target_jenjang_id`, dan status siklus.
-6. `session_participants`: Relasi peserta dengan sesi, token akses, catatan pelanggaran tab switch, total nilai, dan persentase JPM.
+6. `session_participants`: Relasi peserta dengan sesi, status pengerjaan, waktu login & submit, catatan pelanggaran tab switch, total nilai, dan persentase JPM (kolom `token_akses` di-drop seiring penerapan `token_sesi` kolektif).
 7. `participant_answers`: Catatan jawaban real-time (autosave), opsi terpilih, bobot nilai, dan status penandaan ragu-ragu.
 8. `jenjang_jabatan`: 14 tingkatan hierarki jabatan ASN (JPT Utama, Madya, Pratama, Administrator, Pengawas, Pelaksana, JF Ahli Utama s.d. Pertama, JF Terampil).
 9. `standar_kompetensi_jabatan`: Matriks pemetaan standar level (126 kombinasi = 14 jenjang $\times$ 9 kompetensi) sesuai Lampiran PermenPANRB 38/2017.
@@ -267,6 +267,7 @@ Database MySQL `ases_men` telah memiliki 11 tabel fisik (7 tabel inti + 4 tabel 
   - Generator token alfanumerik kapital 6 karakter (misal `TRG83K`) otomatis dibuat saat sesi dibentuk dan diaktifkan.
   - Endpoint `POST /api/sessions/:id/refresh-token` memungkinkan Asesor mengganti token kapan saja jika diperlukan.
   - Verifikasi token ujian (`verifyToken` dan `startExam`) memvalidasi `token_sesi` kolektif dengan tetap mempertahankan validasi otorisasi bahwa pegawai terdaftar pada sesi tersebut.
+  - Kolom lama `token_akses` resmi di-drop dari tabel `session_participants`, kode generator acak dieliminasi, dan arsitektur database kini 100% murni mengandalkan `token_sesi`.
 - **Pembersihan Navigasi Admin & Active State Tab**:
   - Menghilangkan link menu ganda pada navbar atas di rute `/admin/*` sehingga panel administrator menjadi satu-satunya pusat navigasi admin.
   - Visual active state yang jelas (.is-active dengan latar deep navy dan aksen gold) pada tab yang sedang aktif.

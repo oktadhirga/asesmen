@@ -75,7 +75,6 @@ export class ReportsService {
           session_id: sessionParticipants.session_id,
           user_id: sessionParticipants.user_id,
           status: sessionParticipants.status,
-          token_akses: sessionParticipants.token_akses,
           waktu_login: sessionParticipants.waktu_login,
           waktu_submit: sessionParticipants.waktu_submit,
           tab_switch_count: sessionParticipants.tab_switch_count,
