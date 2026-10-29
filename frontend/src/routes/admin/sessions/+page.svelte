@@ -318,7 +318,14 @@
               <tr>
                 <td>
                   <div class="session-info">
-                    <span class="session-code">{session.kode_sesi}</span>
+                    <div class="code-token-row">
+                      <span class="session-code">{session.kode_sesi}</span>
+                      {#if session.token_sesi}
+                        <span class="session-token-pill" title="Token Sesi Kolektif: {session.token_sesi}">
+                          🔑 {session.token_sesi}
+                        </span>
+                      {/if}
+                    </div>
                     <strong class="session-name">{session.judul}</strong>
                     {#if session.target_level || session.target_jenjang}
                       <span class="session-target-badge">
@@ -537,6 +544,15 @@
         helperText="Kode sesi unik tidak dapat diubah setelah dibuat"
       />
 
+      {#if editingSession.token_sesi}
+        <Input
+          label="Token Sesi Ujian (Read-Only)"
+          value={editingSession.token_sesi}
+          disabled
+          helperText="1 Token kolektif untuk seluruh peserta. Untuk mengganti token, gunakan fitur Refresh Token di menu Proctoring."
+        />
+      {/if}
+
       <Input
         label="Judul Sesi Asesmen"
         required
@@ -678,6 +694,24 @@
     font-size: 11px;
     font-family: var(--font-family-mono);
     color: var(--color-text-subtle);
+  }
+
+  .code-token-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+
+  .session-token-pill {
+    font-size: 11px;
+    font-family: var(--font-family-mono);
+    font-weight: 700;
+    color: #9254de;
+    background: #f9f0ff;
+    border: 1px solid #d3adf7;
+    padding: 1px 6px;
+    border-radius: var(--radius-sm);
   }
 
   .session-name {

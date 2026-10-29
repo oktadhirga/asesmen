@@ -458,4 +458,54 @@ describe("Modul Sessions (Sesi & Penjadwalan Asesmen) — TDD Tahap 7", () => {
       expect(verifyRes.status).toBe(404);
     });
   });
+
+  describe("TDD Tahap 16: Model Token Sesi Kolektif (1 Sesi = 1 Token)", () => {
+    it("sesi baru otomatis memiliki token_sesi 6 karakter alfanumerik", async () => {
+      const createRes = await app.handle(
+        new Request("http://localhost/api/sessions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${adminToken}`,
+          },
+          body: JSON.stringify({
+            judul: "Sesi Uji Token Kolektif",
+            kode_sesi: "SESI-TOKEN-TEST",
+            waktu_mulai: "2026-11-01T08:00:00.000Z",
+            waktu_selesai: "2026-11-01T10:00:00.000Z",
+            durasi_menit: 90,
+            target_jenjang_id: 3,
+          }),
+        })
+      );
+
+      expect(createRes.status).toBe(201);
+      const json = await createRes.json();
+      expect(json.data.token_sesi).toBeDefined();
+      expect(json.data.token_sesi.length).toBe(6);
+
+      const testSessId = json.data.id;
+      const initialToken = json.data.token_sesi;
+
+      // Asesor me-refresh token sesi
+      const refreshRes = await app.handle(
+        new Request(`http://localhost/api/sessions/${testSessId}/refresh-token`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${adminToken}` },
+        })
+      );
+      expect(refreshRes.status).toBe(200);
+      const refreshJson = await refreshRes.json();
+      expect(refreshJson.data.token_sesi).toBeDefined();
+      expect(refreshJson.data.token_sesi.length).toBe(6);
+
+      // Bersihkan sesi uji
+      await app.handle(
+        new Request(`http://localhost/api/sessions/${testSessId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${adminToken}` },
+        })
+      );
+    });
+  });
 });

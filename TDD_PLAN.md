@@ -904,6 +904,72 @@ describe("TDD Tahap 14.4: API Master Jenjang Jabatan & Standar Level", () => {
 
 ---
 
+## Tahap 16: Refaktor Model Token Sesi Kolektif (1 Sesi = 1 Token)
+
+> **Tujuan**: Menggantikan model token individual per peserta yang merepotkan di ruang ujian menjadi **Token Sesi Kolektif** (1 Sesi = 1 Token bersama). Asesor/Pengawas ruangan cukup mengumumkan / memproyeksikan satu token sesi di layar ruang ujian, dan seluruh peserta yang terdaftar pada sesi tersebut dapat memasukkan token yang sama untuk memulai ujian secara serentak dengan keamanan otorisasi NIP tetap terjaga.
+
+### 16.1: Skema Database & Migrasi Token Sesi
+**Ringkasan Tugas**  
+Menambahkan kolom `token_sesi` (`varchar(20)`) pada tabel `assessment_sessions`. Menjalankan migrasi database MySQL `ases_men` dan memperbarui test skema.
+
+**Target File**  
+- `backend/src/db/schema.ts`  
+- `backend/src/db/migrate-schema.ts`  
+- `backend/tests/db/schema.test.ts`  
+
+**Kriteria Keberhasilan / Acceptance Criteria**  
+- [x] Kolom `token_sesi` ada di skema Drizzle ORM dan tabel MySQL `assessment_sessions`.
+- [x] Test `backend/tests/db/schema.test.ts` pass (12/12).
+
+---
+
+### 16.2: Core Engine Token Sesi & Verifikasi Kolektif
+**Ringkasan Tugas**  
+1. Menambahkan fungsi generator token sesi 6 karakter unik berformat alfanumerik kapital (misal `TRG83K`) di `SessionsService`.
+2. Saat sesi dibuat atau diubah ke status `BERJALAN`, sistem mengisikan `token_sesi`.
+3. Memperbarui method verifikasi token peserta (`SessionsService.verifyParticipantToken`) dan mulai ujian (`ExamsService.startExam`) agar mencocokkan `token_sesi` dari sesi asesmen yang bersangkutan (tetap memvalidasi bahwa peserta memang terdaftar di sesi tersebut).
+4. Menyediakan endpoint `POST /api/sessions/:id/refresh-token` untuk regenerasi token baru.
+
+**Target File**  
+- `backend/src/modules/sessions/sessions.service.ts`  
+- `backend/src/modules/sessions/sessions.route.ts`  
+- `backend/src/modules/exams/exams.service.ts`  
+- `backend/tests/modules/sessions/sessions.test.ts`  
+- `backend/tests/modules/exams/exams.test.ts`  
+
+**Kriteria Keberhasilan / Acceptance Criteria**  
+- [x] Sesi baru otomatis memiliki `token_sesi` 6 karakter alfanumerik kapital.
+- [x] Endpoint refresh token menghasilkan token baru.
+- [x] Verifikasi token dan mulai ujian memvalidasi kesesuaian token sesi peserta terdaftar.
+- [x] Test `sessions.test.ts` (18/18) dan `exams.test.ts` (10/10) 100% pass.
+
+---
+
+### 16.3: Tampilan Layar Token Admin Proctoring & Modal Peserta
+**Ringkasan Tugas**  
+1. Memperbarui `frontend/src/lib/types/index.ts` dengan atribut `token_sesi` pada `AssessmentSession`.
+2. Di halaman Proctoring & Detail Sesi (`admin/sessions/[id]/+page.svelte`), menampilkan kartu banner besar **Token Sesi Aktif** dengan fitur salin token, refresh token, dan proyeksi layar ruang ujian.
+3. Di tabel daftar sesi (`admin/sessions/+page.svelte`), menampilkan badge token sesi aktif.
+4. Di Dashboard Peserta (`participant/dashboard/+page.svelte`), memperbarui petunjuk modal input token agar peserta memasukkan token sesi yang diumumkan oleh Pengawas / Asesor di ruangan.
+5. Merapikan navigasi ganda navbar admin dan menambahkan active state visual.
+
+**Target File**  
+- `frontend/src/lib/types/index.ts`  
+- `frontend/src/routes/admin/sessions/[id]/+page.svelte`  
+- `frontend/src/routes/admin/sessions/+page.svelte`  
+- `frontend/src/routes/participant/dashboard/+page.svelte`  
+- `frontend/src/lib/components/ui/Navbar.svelte`  
+- `frontend/src/routes/admin/+layout.svelte`  
+
+**Kriteria Keberhasilan / Acceptance Criteria**  
+- [x] Banner token sesi dan tombol Salin, Refresh, serta Mode Proyektor Layar Penuh berfungsi di proctoring admin.
+- [x] Daftar sesi menampilkan badge token sesi aktif.
+- [x] Modal pengerjaan ujian peserta menampilkan instruksi token sesi.
+- [x] Menu navbar admin rapi tanpa duplikasi tautan dan active state tab menyala jelas.
+- [x] `bun run check` di `frontend/` lolos dengan 0 errors dan 0 warnings.  
+
+---
+
 ## Dependency Graph (Urutan Eksekusi Master)
 
 ```mermaid
@@ -924,13 +990,15 @@ graph TD
     T13 --> T12["Tahap 12: FE Peserta"]
     T13 --> T14["Tahap 14: Standar Jabatan & Kamus ASN (PermenPANRB 38/2017)"]
     T14 --> T15["Tahap 15: Penyelarasan Frontend UI & Kamus ASN"]
+    T15 --> T16["Tahap 16: Refaktor Token Sesi Kolektif (1 Sesi = 1 Token)"]
 
     style T1 fill:#0b1e3f,color:#d4af37,stroke:#d4af37
     style T8 fill:#0b1e3f,color:#d4af37,stroke:#d4af37
     style T9 fill:#0b1e3f,color:#d4af37,stroke:#d4af37
     style T12 fill:#0b1e3f,color:#d4af37,stroke:#d4af37
     style T14 fill:#0b1e3f,color:#d4af37,stroke:#d4af37
-    style T15 fill:#14532d,color:#ffffff,stroke:#22c55e
+    style T15 fill:#0b1e3f,color:#d4af37,stroke:#d4af37
+    style T16 fill:#14532d,color:#ffffff,stroke:#22c55e
 ```
 
-> **Catatan Fase**: Tahap 1 s.d. 14 mencakup fondasi MVP serta engine kalkulasi standar kompetensi berbasis data riil Kamus ASN PermenPANRB 38/2017 yang telah berstatus selesai (**Done**). Tahap 15 menyempurnakan antarmuka pengguna agar selaras penuh dengan kapabilitas master data baru.
+> **Catatan Fase**: Tahap 1 s.d. 15 mencakup fondasi lengkap, kalkulasi standar kamus ASN, dan perapian navigasi. Tahap 16 menyempurnakan alur operasional ujian di ruangan asesmen dengan model 1 token per sesi bersama.

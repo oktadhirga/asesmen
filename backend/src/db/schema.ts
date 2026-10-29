@@ -147,6 +147,7 @@ export const assessmentSessions = mysqlTable(
     judul: varchar("judul", { length: 255 }).notNull(),
     deskripsi: text("deskripsi"),
     kode_sesi: varchar("kode_sesi", { length: 50 }).notNull().unique(),
+    token_sesi: varchar("token_sesi", { length: 20 }),
     waktu_mulai: timestamp("waktu_mulai").notNull(),
     waktu_selesai: timestamp("waktu_selesai").notNull(),
     durasi_menit: int("durasi_menit").default(60).notNull(),

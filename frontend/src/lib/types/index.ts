@@ -103,6 +103,7 @@ export interface AssessmentSession {
   waktu_selesai: string;
   durasi_menit: number;
   status: SessionStatus;
+  token_sesi?: string | null;
   target_jenjang?: JenjangJabatan | string | null;
   target_jenjang_id?: number | null;
   target_jenjang_nama?: string | null;

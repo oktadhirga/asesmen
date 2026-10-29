@@ -26,6 +26,7 @@
 | **13** | Integration Test End-to-End | ✅ Selesai | — | Pengujian siklus penuh asesmen ASN dari autentikasi admin/peserta, setup master data, verifikasi token akses, core engine autosave SJT, proctoring tab-switch counter, submit lembar jawaban, hingga laporan individual radar chart 9 dimensi dan rekapitulasi JPM sesi. |
 | **14** | Kamus Kompetensi & Standar Level ASN | ✅ Selesai | — | Integrasi standar kompetensi jabatan PermenPANRB 38/2017: 4 tabel database baru (11 tabel fisik total), parser Excel mandiri (`Kamus_Kompetensi_ASN.xlsx`), seeder 14 jenjang & 126 pemetaan standar level, kalkulasi laporan dinamis berbasis standar jenjang sesi (Reports Service), dan REST API master jabatan & indikator perilaku. |
 | **15** | Penyelarasan Frontend UI & Kamus ASN | ✅ Selesai | — | Penyesuaian skala Radar Chart & form Bank Soal (skala level 1–5 murni), integrasi 14 jenjang jabatan ASN pada master pegawai, modal penelusuran kamus indikator perilaku pada laporan individu peserta, serta penambahan halaman katalog Master Standar Jabatan & Kamus ASN (`/admin/standards`). |
+| **16** | Model Token Sesi Kolektif (1 Sesi = 1 Token) | ✅ Selesai | — | Refaktor token ujian menjadi 1 token bersama per sesi (format 6 karakter kapital misal `TRG83K`), Banner Token Sesi Aktif di proctoring admin, fitur Salin Token, Refresh Token, Mode Proyektor Layar Penuh CAT, perapian menu navbar admin, dan modal input token peserta. |
 
 ---
 
@@ -260,6 +261,20 @@ Database MySQL `ases_men` telah memiliki 11 tabel fisik (7 tabel inti + 4 tabel 
   - Tab 1: **Matriks Standar Level** interaktif (14 jenjang $\times$ 9 dimensi kompetensi PermenPANRB) dengan filter kelompok jabatan dan panel inspeksi rincian standar.
   - Tab 2: **Kamus Indikator Perilaku** yang menampilkan hierarki 9 dimensi $\times$ 5 level $\times$ 3 butir indikator perilaku per level secara terstruktur.
 
+### 15. Refaktor Model Token Sesi Kolektif (Tahap 16)
+- **1 Token per Sesi Asesmen**:
+  - Kolom `token_sesi` (`varchar(20)`) ditambahkan ke tabel `assessment_sessions`.
+  - Generator token alfanumerik kapital 6 karakter (misal `TRG83K`) otomatis dibuat saat sesi dibentuk dan diaktifkan.
+  - Endpoint `POST /api/sessions/:id/refresh-token` memungkinkan Asesor mengganti token kapan saja jika diperlukan.
+  - Verifikasi token ujian (`verifyToken` dan `startExam`) memvalidasi `token_sesi` kolektif dengan tetap mempertahankan validasi otorisasi bahwa pegawai terdaftar pada sesi tersebut.
+- **Pembersihan Navigasi Admin & Active State Tab**:
+  - Menghilangkan link menu ganda pada navbar atas di rute `/admin/*` sehingga panel administrator menjadi satu-satunya pusat navigasi admin.
+  - Visual active state yang jelas (.is-active dengan latar deep navy dan aksen gold) pada tab yang sedang aktif.
+- **Banner Proctoring & Mode Proyektor Layar Penuh CAT**:
+  - Banner Token Sesi Aktif di halaman detail sesi admin dengan tombol **Salin Token**, **Refresh Token**, dan **Mode Proyektor Layar Penuh**.
+  - Modal overlay layar penuh bergaya proyektor ruangan CAT dengan jam digital real-time dan teks token berukuran besar untuk diproyeksikan ke dinding/layar ruang ujian.
+  - Dashboard peserta diperbarui memandu pengisian token sesi dari pengawas ruangan.
+
 ---
 
 ## Status Pengujian Otomatis (TDD Suite)
@@ -274,13 +289,13 @@ tests/modules/auth/auth.test.ts                       9 pass (27 expect calls)
 tests/modules/users/users.test.ts                    13 pass (49 expect calls)
 tests/modules/competency/competency.test.ts          10 pass (32 expect calls)
 tests/modules/questions/questions.test.ts            14 pass (44 expect calls)
-tests/modules/sessions/sessions.test.ts              17 pass (57 expect calls)
+tests/modules/sessions/sessions.test.ts              18 pass (59 expect calls)
 tests/modules/exams/exams.test.ts                    10 pass (384 expect calls)
 tests/modules/reports/reports.test.ts                 8 pass (99 expect calls)
 tests/modules/reports/reports-standar-jabatan.test.ts 3 pass (4 expect calls)
 tests/modules/jabatan/jabatan.test.ts                11 pass (45 expect calls)
 tests/integration/e2e-assessment-lifecycle.test.ts   24 pass (351 expect calls)
 ---------------------------------------------------------------------------------
-Total                                               144 pass, 0 fail (1508 assertions)
+Total                                               145 pass, 0 fail (1515 assertions)
 TypeScript / Svelte Compilation                       0 errors, 0 warnings (Exit code 0)
 ```

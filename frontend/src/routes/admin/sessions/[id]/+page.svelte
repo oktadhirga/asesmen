@@ -19,6 +19,56 @@
   let selectedUserIds = $state<number[]>([]);
   let isSubmitting = $state(false);
 
+  // Fitur Token Sesi Kolektif (Tahap 16)
+  let copiedToken = $state(false);
+  let isRefreshingToken = $state(false);
+  let isProjectorModalOpen = $state(false);
+  let currentTimeDisplay = $state("");
+  let clockInterval: any = null;
+
+  function updateClock() {
+    currentTimeDisplay = new Date().toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  }
+
+  async function copyToken() {
+    if (session?.token_sesi) {
+      try {
+        await navigator.clipboard.writeText(session.token_sesi);
+        copiedToken = true;
+        setTimeout(() => (copiedToken = false), 2000);
+      } catch (e) {
+        // Fallback jika navigator clipboard diblokir
+        prompt("Salin token sesi ini:", session.token_sesi);
+      }
+    }
+  }
+
+  async function handleRefreshToken() {
+    if (!confirm("Buat token sesi baru? Peserta yang belum mulai ujian harus memasukkan token baru ini.")) {
+      return;
+    }
+    isRefreshingToken = true;
+    try {
+      const res = await ApiClient.post<any>(`/sessions/${sessionId}/refresh-token`, {});
+      if (res.success && res.data) {
+        if (session) {
+          session.token_sesi = res.data.token_sesi;
+        }
+        successMessage = `Token sesi berhasil diperbarui menjadi ${res.data.token_sesi}`;
+      } else {
+        errorMessage = res.message || "Gagal memperbarui token sesi.";
+      }
+    } catch (err: any) {
+      errorMessage = err.message || "Gagal memperbarui token sesi.";
+    } finally {
+      isRefreshingToken = false;
+    }
+  }
+
   // Auto-refresh interval untuk Live Proctoring (setiap 5 detik saat ujian BERJALAN)
   let pollInterval: any = null;
 
@@ -128,6 +178,8 @@
   }
 
   onMount(async () => {
+    updateClock();
+    clockInterval = setInterval(updateClock, 1000);
     await loadSessionDetails();
     // Auto-polling live proctoring setiap 5 detik
     pollInterval = setInterval(() => {
@@ -139,6 +191,7 @@
 
   onDestroy(() => {
     if (pollInterval) clearInterval(pollInterval);
+    if (clockInterval) clearInterval(clockInterval);
   });
 </script>
 
@@ -205,6 +258,61 @@
         </div>
       </div>
     </Card>
+
+    <!-- Banner Token Sesi Kolektif (Tahap 16: 1 Sesi = 1 Token) -->
+    {#if session.token_sesi}
+      <div class="token-session-banner">
+        <div class="token-banner-main">
+          <div class="token-banner-badge">
+            <span class="token-key-icon" aria-hidden="true">🔑</span>
+            <span class="token-banner-label">TOKEN SESI RUANG UJIAN (1 TOKEN KOLEKTIF)</span>
+            {#if session.status === "BERJALAN"}
+              <Badge variant="success" size="sm" dot>AKTIF UNTUK PESERTA</Badge>
+            {:else if session.status === "DRAFT"}
+              <Badge variant="warning" size="sm">SIAP (SESI DRAFT)</Badge>
+            {:else}
+              <Badge variant="default" size="sm">SESI SELESAI</Badge>
+            {/if}
+          </div>
+
+          <div class="token-code-row">
+            <div class="token-large-box">
+              <span class="token-chars">{session.token_sesi}</span>
+            </div>
+            <button
+              type="button"
+              class="token-copy-btn"
+              onclick={copyToken}
+              title="Salin token sesi ke clipboard"
+            >
+              {copiedToken ? "✓ Tersalin!" : "📋 Salin Token"}
+            </button>
+          </div>
+
+          <p class="token-banner-desc">
+            Bagikan 6 digit token di atas kepada seluruh pegawai ASN yang hadir di ruang asesmen, atau proyeksikan ke layar depan ruangan. Token ini berlaku sama untuk seluruh peserta di sesi ini.
+          </p>
+        </div>
+
+        <div class="token-banner-controls">
+          <Button
+            variant="gold"
+            onclick={() => (isProjectorModalOpen = true)}
+            class="projector-launch-btn"
+          >
+            🖥️ Buka Mode Layar Proyektor
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onclick={handleRefreshToken}
+            disabled={isRefreshingToken || session.status === "SELESAI"}
+          >
+            🔄 {isRefreshingToken ? "Membuat..." : "Ganti / Refresh Token Baru"}
+          </Button>
+        </div>
+      </div>
+    {/if}
 
     <!-- Live Proctoring & Participant Table -->
     <Card>
@@ -391,6 +499,52 @@
     </Button>
   {/snippet}
 </Modal>
+
+<!-- Mode Proyektor Layar Penuh (CAT Room Projection Screen) -->
+{#if isProjectorModalOpen && session}
+  <div class="projector-overlay" role="dialog" aria-modal="true">
+    <div class="projector-header">
+      <div class="projector-brand">
+        <span class="projector-badge">PEMKAB TRENGGALEK · PENTA+ CAT</span>
+        <span class="projector-clock">Waktu Ruang Ujian: {currentTimeDisplay}</span>
+      </div>
+      <button
+        type="button"
+        class="projector-close-btn"
+        onclick={() => (isProjectorModalOpen = false)}
+        aria-label="Tutup Mode Layar Proyektor"
+      >
+        ✕ Tutup Layar Penuh
+      </button>
+    </div>
+
+    <div class="projector-body">
+      <div class="projector-session-info">
+        <h1 class="projector-title">{session.judul}</h1>
+        <p class="projector-sub">
+          Kode Sesi: <strong>{session.kode_sesi}</strong> · Durasi: <strong>{session.durasi_menit} Menit</strong>
+        </p>
+      </div>
+
+      <div class="projector-card">
+        <div class="projector-token-header">
+          <span class="token-pin-icon" aria-hidden="true">🔑</span>
+          <span>TOKEN UJIAN SESI INI:</span>
+        </div>
+        <div class="projector-token-giant">
+          {session.token_sesi}
+        </div>
+        <p class="projector-instructions">
+          Masukkan 6 digit kode token di atas pada akun PENTA+ masing-masing untuk memulai lembar soal.
+        </p>
+      </div>
+
+      <div class="projector-footer-rule">
+        <span>⚠️ Dilarang membuka tab browser lain atau meninggalkan jendela ujian selama pengerjaan berlangsung.</span>
+      </div>
+    </div>
+  </div>
+{/if}
 
 <style>
   .session-detail-page {
@@ -649,5 +803,223 @@
 
   @keyframes spin {
     to { transform: rotate(360deg); }
+  }
+
+  /* Tahap 16: Banner Token Sesi Kolektif */
+  .token-session-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    background: linear-gradient(135deg, #0a2540 0%, #173860 100%);
+    color: #ffffff;
+    border-radius: var(--radius-lg);
+    padding: var(--space-5) var(--space-6);
+    box-shadow: 0 4px 14px rgba(10, 37, 64, 0.15);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    flex-wrap: wrap;
+  }
+
+  .token-banner-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    max-width: 650px;
+  }
+
+  .token-banner-badge {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .token-banner-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #d4af37;
+  }
+
+  .token-code-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .token-large-box {
+    background: rgba(0, 0, 0, 0.35);
+    border: 2px dashed #d4af37;
+    border-radius: var(--radius-md);
+    padding: 6px 18px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .token-chars {
+    font-family: var(--font-family-mono);
+    font-size: 1.85rem;
+    font-weight: 800;
+    letter-spacing: 0.25em;
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  }
+
+  .token-copy-btn {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: var(--radius-md);
+    padding: 8px 14px;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .token-copy-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: #ffffff;
+  }
+
+  .token-banner-desc {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .token-banner-controls {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    align-items: flex-end;
+  }
+
+  /* Overlay Proyektor Layar Penuh */
+  .projector-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: radial-gradient(circle at center, #133966 0%, #061628 100%);
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-8);
+    overflow: auto;
+  }
+
+  .projector-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    padding-bottom: var(--space-4);
+  }
+
+  .projector-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .projector-badge {
+    background: #d4af37;
+    color: #0a2540;
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    padding: 4px 12px;
+    border-radius: var(--radius-sm);
+  }
+
+  .projector-clock {
+    font-family: var(--font-family-mono);
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .projector-close-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 8px 18px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .projector-close-btn:hover {
+    background: rgba(255, 0, 0, 0.6);
+    border-color: #ff4d4f;
+  }
+
+  .projector-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: var(--space-6);
+    padding: var(--space-6) 0;
+  }
+
+  .projector-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: var(--space-2);
+  }
+
+  .projector-sub {
+    font-size: 1.15rem;
+    color: rgba(255, 255, 255, 0.75);
+  }
+
+  .projector-card {
+    background: rgba(10, 37, 64, 0.7);
+    border: 3px solid #d4af37;
+    border-radius: var(--radius-xl);
+    padding: var(--space-8) var(--space-12);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    max-width: 800px;
+    width: 90%;
+  }
+
+  .projector-token-header {
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #d4af37;
+    margin-bottom: var(--space-3);
+  }
+
+  .projector-token-giant {
+    font-family: var(--font-family-mono);
+    font-size: 5rem;
+    font-weight: 900;
+    letter-spacing: 0.35em;
+    color: #ffffff;
+    padding: var(--space-4) 0;
+    text-shadow: 0 4px 15px rgba(212, 175, 55, 0.5);
+    user-select: all;
+  }
+
+  .projector-instructions {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-top: var(--space-4);
+    line-height: 1.5;
+  }
+
+  .projector-footer-rule {
+    font-size: 13px;
+    color: #ffc069;
+    background: rgba(255, 192, 105, 0.1);
+    border: 1px solid rgba(255, 192, 105, 0.3);
+    padding: 8px 24px;
+    border-radius: 999px;
   }
 </style>

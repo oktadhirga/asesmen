@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { page } from "$app/state";
   import { auth } from "../../lib/stores/auth.svelte";
   import type { LayoutProps } from "./$types";
 
@@ -18,6 +19,8 @@
       window.location.href = "/login";
     }
   });
+
+  const currentPath = $derived(page.url.pathname);
 </script>
 
 {#if isChecking || auth.isLoading}
@@ -35,12 +38,48 @@
       </div>
 
       <nav class="admin-menu" aria-label="Menu Administrator">
-        <a href="/admin/dashboard" class="admin-tab">Dashboard</a>
-        <a href="/admin/sessions" class="admin-tab">Sesi & Proctoring</a>
-        <a href="/admin/questions" class="admin-tab">Bank Soal SJT</a>
-        <a href="/admin/users" class="admin-tab">Pegawai ASN</a>
-        <a href="/admin/reports" class="admin-tab">Rekapitulasi JPM</a>
-        <a href="/admin/standards" class="admin-tab">Kamus & Standar ASN</a>
+        <a
+          href="/admin/dashboard"
+          class="admin-tab"
+          class:is-active={currentPath === "/admin/dashboard"}
+        >
+          Dashboard
+        </a>
+        <a
+          href="/admin/sessions"
+          class="admin-tab"
+          class:is-active={currentPath.startsWith("/admin/sessions")}
+        >
+          Sesi &amp; Proctoring
+        </a>
+        <a
+          href="/admin/questions"
+          class="admin-tab"
+          class:is-active={currentPath.startsWith("/admin/questions")}
+        >
+          Bank Soal SJT
+        </a>
+        <a
+          href="/admin/users"
+          class="admin-tab"
+          class:is-active={currentPath.startsWith("/admin/users")}
+        >
+          Pegawai ASN
+        </a>
+        <a
+          href="/admin/reports"
+          class="admin-tab"
+          class:is-active={currentPath.startsWith("/admin/reports")}
+        >
+          Rekapitulasi JPM
+        </a>
+        <a
+          href="/admin/standards"
+          class="admin-tab"
+          class:is-active={currentPath.startsWith("/admin/standards")}
+        >
+          Kamus &amp; Standar ASN
+        </a>
       </nav>
     </header>
 
@@ -130,6 +169,33 @@
     border-color: var(--color-brand-accent-light);
     transform: translateY(-1px);
     text-decoration: none;
+  }
+
+  .admin-tab.is-active {
+    background-color: var(--color-brand-primary);
+    color: #ffffff;
+    border-color: var(--color-brand-primary);
+    font-weight: var(--font-weight-bold);
+    box-shadow: 0 2px 4px rgba(10, 37, 64, 0.15);
+    position: relative;
+  }
+
+  .admin-tab.is-active:hover {
+    background-color: var(--color-brand-primary);
+    color: #ffffff;
+    border-color: var(--color-brand-primary);
+    transform: none;
+  }
+
+  .admin-tab.is-active::after {
+    content: "";
+    position: absolute;
+    bottom: -1px;
+    left: 20%;
+    right: 20%;
+    height: 2px;
+    background-color: var(--color-gold);
+    border-radius: var(--radius-full);
   }
 
   .admin-page-body {

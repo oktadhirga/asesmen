@@ -62,11 +62,12 @@ describe("Database Schema Definitions (TDD Tahap 1 & Tahap 14.1)", () => {
     expect(cols.bobot_nilai).toBeDefined();
   });
 
-  it("assessment_sessions should have status enum, duration, and target_jenjang_id FK", () => {
+  it("assessment_sessions should have status enum, duration, target_jenjang_id FK, and token_sesi", () => {
     const cols = getTableColumns(schema.assessmentSessions);
     expect(cols.id).toBeDefined();
     expect(cols.judul).toBeDefined();
     expect(cols.kode_sesi).toBeDefined();
+    expect(cols.token_sesi).toBeDefined();
     expect(cols.waktu_mulai).toBeDefined();
     expect(cols.waktu_selesai).toBeDefined();
     expect(cols.durasi_menit).toBeDefined();

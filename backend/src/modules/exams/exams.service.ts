@@ -91,13 +91,27 @@ export class ExamsService {
       .where(
         and(
           eq(sessionParticipants.session_id, sessionId),
-          eq(sessionParticipants.user_id, userId),
-          eq(sessionParticipants.token_akses, tokenAkses.trim().toUpperCase())
+          eq(sessionParticipants.user_id, userId)
         )
       )
       .limit(1);
 
     if (!participant) {
+      throw new Error(
+        "Token akses tidak valid atau Anda tidak terdaftar dalam sesi ini."
+      );
+    }
+
+    // Validasi token (token sesi kolektif atau fallback token individual)
+    const inputToken = tokenAkses.trim().toUpperCase();
+    const expectedSessionToken = (session.token_sesi || "").trim().toUpperCase();
+    const expectedParticipantToken = (participant.token_akses || "").trim().toUpperCase();
+
+    const isMatch =
+      (expectedSessionToken && inputToken === expectedSessionToken) ||
+      (expectedParticipantToken && inputToken === expectedParticipantToken);
+
+    if (!isMatch) {
       throw new Error(
         "Token akses tidak valid atau Anda tidak terdaftar dalam sesi ini."
       );

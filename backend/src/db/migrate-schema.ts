@@ -86,6 +86,11 @@ async function runMigration() {
       await conn.query("ALTER TABLE assessment_sessions DROP COLUMN target_jenjang");
     }
 
+    if (!sessColNames.includes("token_sesi")) {
+      console.log("Menambahkan kolom token_sesi ke assessment_sessions...");
+      await conn.query("ALTER TABLE assessment_sessions ADD COLUMN token_sesi varchar(20) NULL");
+    }
+
     console.log("✅ Migrasi skema database berhasil selesai!");
   } catch (err) {
     console.error("❌ Gagal migrasi skema:", err);

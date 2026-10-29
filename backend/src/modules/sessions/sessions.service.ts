@@ -55,6 +55,18 @@ export class SessionsService {
   }
 
   /**
+   * Helper untuk meng-generate token sesi kolektif (format: 6 karakter alfanumerik kapital, e.g. TRG83K)
+   */
+  static generateTokenSesi(): string {
+    const chars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+    let token = "";
+    for (let i = 0; i < 6; i++) {
+      token += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return token;
+  }
+
+  /**
    * Helper resolusi jenjang_jabatan_id dari string kode, level 1-5, atau integer
    */
   static async resolveJenjangId(val: string | number | null | undefined): Promise<number | null> {
@@ -156,6 +168,7 @@ export class SessionsService {
         judul: assessmentSessions.judul,
         deskripsi: assessmentSessions.deskripsi,
         kode_sesi: assessmentSessions.kode_sesi,
+        token_sesi: assessmentSessions.token_sesi,
         waktu_mulai: assessmentSessions.waktu_mulai,
         waktu_selesai: assessmentSessions.waktu_selesai,
         durasi_menit: assessmentSessions.durasi_menit,
@@ -219,6 +232,7 @@ export class SessionsService {
         judul: assessmentSessions.judul,
         deskripsi: assessmentSessions.deskripsi,
         kode_sesi: assessmentSessions.kode_sesi,
+        token_sesi: assessmentSessions.token_sesi,
         waktu_mulai: assessmentSessions.waktu_mulai,
         waktu_selesai: assessmentSessions.waktu_selesai,
         durasi_menit: assessmentSessions.durasi_menit,
@@ -277,11 +291,14 @@ export class SessionsService {
       data.target_jenjang_id ?? data.target_jenjang ?? "PELAKSANA"
     );
 
+    const tokenSesi = this.generateTokenSesi();
+
     // 3. Insert ke database
     const [inserted] = await db.insert(assessmentSessions).values({
       judul: data.judul.trim(),
       deskripsi: data.deskripsi?.trim() || null,
       kode_sesi: data.kode_sesi.trim().toUpperCase(),
+      token_sesi: tokenSesi,
       waktu_mulai: startTime,
       waktu_selesai: endTime,
       durasi_menit: data.durasi_menit || 60,
@@ -353,6 +370,9 @@ export class SessionsService {
 
     if (data.status !== undefined) {
       updatePayload.status = data.status;
+      if (data.status === "BERJALAN" && !existing.token_sesi) {
+        updatePayload.token_sesi = this.generateTokenSesi();
+      }
     }
 
     await db
@@ -361,6 +381,22 @@ export class SessionsService {
       .where(eq(assessmentSessions.id, id));
 
     return await this.getSessionById(id);
+  }
+
+  /**
+   * Me-refresh token sesi kolektif baru oleh Asesor (khususnya saat ujian berlangsung)
+   */
+  static async refreshSessionToken(sessionId: number): Promise<string> {
+    const existing = await this.getSessionById(sessionId);
+    if (!existing) {
+      throw new Error("Sesi asesmen tidak ditemukan.");
+    }
+    const newToken = this.generateTokenSesi();
+    await db
+      .update(assessmentSessions)
+      .set({ token_sesi: newToken })
+      .where(eq(assessmentSessions.id, sessionId));
+    return newToken;
   }
 
   /**
@@ -539,20 +575,32 @@ export class SessionsService {
       throw new Error(`Sesi ujian tidak sedang aktif (Status: ${session.status}).`);
     }
 
-    // 2. Cek apakah peserta terdaftar dengan token yang sesuai
+    // 2. Cek apakah peserta terdaftar dalam sesi ini
     const [participant] = await db
       .select()
       .from(sessionParticipants)
       .where(
         and(
           eq(sessionParticipants.session_id, session.id),
-          eq(sessionParticipants.user_id, userId),
-          eq(sessionParticipants.token_akses, tokenAkses.trim().toUpperCase())
+          eq(sessionParticipants.user_id, userId)
         )
       )
       .limit(1);
 
     if (!participant) {
+      throw new Error("Token akses tidak valid atau Anda tidak terdaftar pada sesi ini.");
+    }
+
+    // 3. Validasi token (token sesi kolektif atau fallback token individual)
+    const inputToken = tokenAkses.trim().toUpperCase();
+    const expectedSessionToken = (session.token_sesi || "").trim().toUpperCase();
+    const expectedParticipantToken = (participant.token_akses || "").trim().toUpperCase();
+
+    const isMatch =
+      (expectedSessionToken && inputToken === expectedSessionToken) ||
+      (expectedParticipantToken && inputToken === expectedParticipantToken);
+
+    if (!isMatch) {
       throw new Error("Token akses tidak valid atau Anda tidak terdaftar pada sesi ini.");
     }
 
@@ -566,6 +614,7 @@ export class SessionsService {
         id: session.id,
         judul: session.judul,
         kode_sesi: session.kode_sesi,
+        token_sesi: session.token_sesi,
         durasi_menit: session.durasi_menit,
       },
       participant: {
@@ -586,6 +635,7 @@ export class SessionsService {
         judul: assessmentSessions.judul,
         deskripsi: assessmentSessions.deskripsi,
         kode_sesi: assessmentSessions.kode_sesi,
+        token_sesi: assessmentSessions.token_sesi,
         waktu_mulai: assessmentSessions.waktu_mulai,
         waktu_selesai: assessmentSessions.waktu_selesai,
         durasi_menit: assessmentSessions.durasi_menit,
@@ -632,6 +682,7 @@ export class SessionsService {
       target_level: r.target_level,
       participant_status: r.participant_status,
       status_peserta: r.participant_status,
+      token_sesi: r.token_sesi,
       token_akses: r.token_akses,
       waktu_login: r.waktu_login,
       waktu_submit: r.waktu_submit,

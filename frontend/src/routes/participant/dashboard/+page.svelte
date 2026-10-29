@@ -407,7 +407,7 @@
                 >
                   <polygon points="5 3 19 12 5 21 5 3"></polygon>
                 </svg>
-                Mulai Asesmen (Masukkan Token)
+                Mulai Asesmen (Masukkan Token Sesi)
               </Button>
             {:else}
               <div class="waiting-notice">
@@ -469,17 +469,17 @@
 
       <div class="token-input-group">
         <label for="token-akses-input" class="token-label">
-          Masukkan Token Akses Peserta:
+          Masukkan Token Sesi Ujian:
         </label>
         <Input
           id="token-akses-input"
-          placeholder="Contoh: ASN-947261"
+          placeholder="Contoh: TRG83K"
           bind:value={inputToken}
           class="font-mono text-center token-input-lg"
           autocomplete="off"
         />
         <span class="token-hint">
-          Token diberikan oleh panitia pengawas ujian atau tertera pada akun Anda.
+          Masukkan 6 digit kode token sesi yang diumumkan atau ditampilkan oleh Pengawas Asesor di ruang ujian.
         </span>
       </div>
     </div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { page } from "$app/state";
   import { auth } from "../../stores/auth.svelte";
   import Badge from "./Badge.svelte";
   import Button from "./Button.svelte";
@@ -8,6 +9,8 @@
       auth.logout();
     }
   }
+
+  const isAdminRoute = $derived(page.url.pathname.startsWith("/admin"));
 </script>
 
 <header class="navbar-wrapper">
@@ -37,11 +40,17 @@
       {#if auth.isAuthenticated && auth.user}
         <nav class="nav-links" aria-label="Navigasi Utama">
           {#if auth.isAdmin}
-            <a href="/admin/dashboard" class="nav-item">Dashboard</a>
-            <a href="/admin/sessions" class="nav-item">Sesi Asesmen</a>
-            <a href="/admin/questions" class="nav-item">Bank Soal</a>
-            <a href="/admin/users" class="nav-item">Pegawai</a>
-            <a href="/admin/reports" class="nav-item">Laporan & Rekap</a>
+            {#if !isAdminRoute}
+              <a href="/admin/dashboard" class="nav-admin-quick-btn">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
+                  <rect x="3" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="14" width="7" height="7"></rect>
+                  <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                <span>Panel Administrator</span>
+              </a>
+            {/if}
           {:else}
             <a href="/participant/dashboard" class="nav-item">Jadwal Ujian Saya</a>
           {/if}
@@ -188,6 +197,28 @@
   .nav-item:hover {
     color: var(--color-brand-primary);
     background-color: var(--color-bg-subtle);
+    text-decoration: none;
+  }
+
+  .nav-admin-quick-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-brand-primary);
+    background-color: var(--color-bg-subtle);
+    border: 1px solid var(--color-border-strong);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .nav-admin-quick-btn:hover {
+    background-color: var(--color-brand-primary);
+    color: #ffffff;
+    border-color: var(--color-brand-primary);
     text-decoration: none;
   }
 

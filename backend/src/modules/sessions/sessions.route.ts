@@ -378,6 +378,35 @@ export const sessionsRoute = new Elysia()
           }),
         }
       )
+
+      // 11. POST /api/sessions/:id/refresh-token (Generate Token Sesi Baru — Khusus Admin)
+      .post(
+        "/:id/refresh-token",
+        async ({ params, set }) => {
+          try {
+            const newToken = await SessionsService.refreshSessionToken(Number(params.id));
+            return {
+              success: true,
+              message: "Token sesi berhasil diperbarui.",
+              data: {
+                token_sesi: newToken,
+              },
+            };
+          } catch (error: any) {
+            set.status = 400;
+            return {
+              success: false,
+              message: error.message || "Gagal memperbarui token sesi",
+            };
+          }
+        },
+        {
+          beforeHandle: requireAdmin,
+          params: t.Object({
+            id: t.String(),
+          }),
+        }
+      )
   );
 
 export type SessionsRoute = typeof sessionsRoute;
