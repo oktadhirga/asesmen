@@ -2,8 +2,19 @@
   import { onMount, onDestroy } from "svelte";
   import { page } from "$app/state";
   import { ApiClient } from "../../../../lib/api/client";
-  import { Card, Badge, Button, Input, Modal, Alert } from "../../../../lib/components/ui";
-  import type { AssessmentSession, SessionParticipant, User } from "../../../../lib/types";
+  import {
+    Card,
+    Badge,
+    Button,
+    Input,
+    Modal,
+    Alert,
+  } from "../../../../lib/components/ui";
+  import type {
+    AssessmentSession,
+    SessionParticipant,
+    User,
+  } from "../../../../lib/types";
 
   const sessionId = $derived(Number(page.params.id));
 
@@ -48,12 +59,19 @@
   }
 
   async function handleRefreshToken() {
-    if (!confirm("Buat token sesi baru? Peserta yang belum mulai ujian harus memasukkan token baru ini.")) {
+    if (
+      !confirm(
+        "Buat token sesi baru? Peserta yang belum mulai ujian harus memasukkan token baru ini.",
+      )
+    ) {
       return;
     }
     isRefreshingToken = true;
     try {
-      const res = await ApiClient.post<any>(`/sessions/${sessionId}/refresh-token`, {});
+      const res = await ApiClient.post<any>(
+        `/sessions/${sessionId}/refresh-token`,
+        {},
+      );
       if (res.success && res.data) {
         if (session) {
           session.token_sesi = res.data.token_sesi;
@@ -76,7 +94,9 @@
     try {
       const [sessionRes, participantsRes] = await Promise.all([
         ApiClient.get<AssessmentSession>(`/sessions/${sessionId}`),
-        ApiClient.get<SessionParticipant[]>(`/sessions/${sessionId}/participants`),
+        ApiClient.get<SessionParticipant[]>(
+          `/sessions/${sessionId}/participants`,
+        ),
       ]);
 
       if (sessionRes.success && sessionRes.data) {
@@ -98,7 +118,10 @@
 
     // Ambil daftar user ASN yang ber-role PESERTA
     try {
-      const res = await ApiClient.get<User[]>("/users", { role: "PESERTA", limit: 100 });
+      const res = await ApiClient.get<User[]>("/users", {
+        role: "PESERTA",
+        limit: 100,
+      });
       if (res.success && res.data) {
         // Filter user yang belum terdaftar di sesi ini
         const existingUserIds = new Set(participants.map((p) => p.user_id));
@@ -139,17 +162,21 @@
         errorMessage = res.message || "Gagal mendaftarkan peserta.";
       }
     } catch (err: any) {
-      errorMessage = err.message || "Terjadi kesalahan saat mendaftarkan peserta.";
+      errorMessage =
+        err.message || "Terjadi kesalahan saat mendaftarkan peserta.";
     } finally {
       isSubmitting = false;
     }
   }
 
   async function handleRemoveParticipant(p: SessionParticipant) {
-    if (!confirm(`Keluarkan ${p.user?.nama || "peserta"} dari sesi ini?`)) return;
+    if (!confirm(`Keluarkan ${p.user?.nama || "peserta"} dari sesi ini?`))
+      return;
 
     try {
-      const res = await ApiClient.delete(`/sessions/${sessionId}/participants/${p.id}`);
+      const res = await ApiClient.delete(
+        `/sessions/${sessionId}/participants/${p.id}`,
+      );
       if (res.success) {
         successMessage = "Peserta berhasil dikeluarkan dari sesi.";
         await loadSessionDetails();
@@ -161,11 +188,15 @@
     }
   }
 
-  async function handleStatusChange(newStatus: "DRAFT" | "BERJALAN" | "SELESAI") {
+  async function handleStatusChange(
+    newStatus: "DRAFT" | "BERJALAN" | "SELESAI",
+  ) {
     if (!confirm(`Ubah status sesi menjadi ${newStatus}?`)) return;
 
     try {
-      const res = await ApiClient.put(`/sessions/${sessionId}`, { status: newStatus });
+      const res = await ApiClient.put(`/sessions/${sessionId}`, {
+        status: newStatus,
+      });
       if (res.success) {
         successMessage = `Status sesi diubah menjadi ${newStatus}.`;
         await loadSessionDetails();
@@ -201,7 +232,11 @@
 
 <div class="session-detail-page">
   {#if successMessage}
-    <Alert variant="success" dismissible onDismiss={() => (successMessage = null)}>
+    <Alert
+      variant="success"
+      dismissible
+      onDismiss={() => (successMessage = null)}
+    >
       {successMessage}
     </Alert>
   {/if}
@@ -234,20 +269,37 @@
           {/if}
 
           <div class="session-specs">
-            <span>⏱ Durasi: <strong>{session.durasi_menit} Menit</strong></span>
-            <span>📅 Mulai: <strong>{new Date(session.waktu_mulai).toLocaleString("id-ID")}</strong></span>
-            <span>🏁 Selesai: <strong>{new Date(session.waktu_selesai).toLocaleString("id-ID")}</strong></span>
+            <span>⏱ Durasi: <strong>{session.durasi_menit} Menit</strong></span
+            >
+            <span
+              >📅 Mulai: <strong
+                >{new Date(session.waktu_mulai).toLocaleString("id-ID")}</strong
+              ></span
+            >
+            <span
+              >🏁 Selesai: <strong
+                >{new Date(session.waktu_selesai).toLocaleString(
+                  "id-ID",
+                )}</strong
+              ></span
+            >
           </div>
         </div>
 
         <div class="meta-right">
           <div class="btn-group-lifecycle">
             {#if session.status === "DRAFT"}
-              <Button variant="primary" onclick={() => handleStatusChange("BERJALAN")}>
+              <Button
+                variant="primary"
+                onclick={() => handleStatusChange("BERJALAN")}
+              >
                 ▶ Mulai Ujian (Buka Akses)
               </Button>
             {:else if session.status === "BERJALAN"}
-              <Button variant="danger" onclick={() => handleStatusChange("SELESAI")}>
+              <Button
+                variant="danger"
+                onclick={() => handleStatusChange("SELESAI")}
+              >
                 ⏹ Akhiri Sesi (Tutup Ujian)
               </Button>
             {/if}
@@ -265,7 +317,9 @@
         <div class="token-banner-main">
           <div class="token-banner-badge">
             <span class="token-key-icon" aria-hidden="true">🔑</span>
-            <span class="token-banner-label">TOKEN SESI RUANG UJIAN (1 TOKEN KOLEKTIF)</span>
+            <span class="token-banner-label"
+              >TOKEN SESI RUANG UJIAN (1 TOKEN KOLEKTIF)</span
+            >
             {#if session.status === "BERJALAN"}
               <Badge variant="success" size="sm" dot>AKTIF UNTUK PESERTA</Badge>
             {:else if session.status === "DRAFT"}
@@ -290,7 +344,9 @@
           </div>
 
           <p class="token-banner-desc">
-            Bagikan 6 digit token di atas kepada seluruh pegawai ASN yang hadir di ruang asesmen, atau proyeksikan ke layar depan ruangan. Token ini berlaku sama untuk seluruh peserta di sesi ini.
+            Bagikan 6 digit token di atas kepada seluruh pegawai ASN yang hadir
+            di ruang asesmen, atau proyeksikan ke layar depan ruangan. Token ini
+            berlaku sama untuk seluruh peserta di sesi ini.
           </p>
         </div>
 
@@ -303,7 +359,7 @@
             🖥️ Buka Mode Layar Proyektor
           </Button>
           <Button
-            variant="outline"
+            variant="primary"
             size="sm"
             onclick={handleRefreshToken}
             disabled={isRefreshingToken || session.status === "SELESAI"}
@@ -321,7 +377,8 @@
           <div>
             <h3>Daftar Peserta &amp; Monitoring Proctoring</h3>
             <p class="section-sub">
-              Deteksi pelanggaran integritas (perpindahan tab/jendela browser) diperbarui secara real-time
+              Deteksi pelanggaran integritas (perpindahan tab/jendela browser)
+              diperbarui secara real-time
             </p>
           </div>
           <div class="refresh-indicator">
@@ -355,7 +412,6 @@
               <tr>
                 <th scope="col">Nama &amp; NIP Pegawai</th>
                 <th scope="col">Jabatan &amp; Unit Kerja</th>
-                <th scope="col">Token Akses</th>
                 <th scope="col">Status Pengerjaan</th>
                 <th scope="col">Pelanggaran Tab (Proctoring)</th>
                 <th scope="col">Nilai / JPM</th>
@@ -367,7 +423,9 @@
                 <tr class:tr-alert={p.tab_switch_count > 0}>
                   <td>
                     <div class="participant-name-cell">
-                      <strong class="user-fullname">{p.user?.nama || "Pegawai ASN"}</strong>
+                      <strong class="user-fullname"
+                        >{p.user?.nama || "Pegawai ASN"}</strong
+                      >
                       <span class="user-nip">NIP: {p.user?.nip || "-"}</span>
                     </div>
                   </td>
@@ -376,9 +434,6 @@
                       <span>{p.user?.jabatan || "-"}</span>
                       <small>{p.user?.unit_kerja || "Pemkab Trenggalek"}</small>
                     </div>
-                  </td>
-                  <td>
-                    <code class="token-pill">{p.token_akses}</code>
                   </td>
                   <td>
                     {#if p.status === "SEDANG_MENGERJAKAN"}
@@ -403,7 +458,14 @@
                       <div class="score-display">
                         <span class="score-num">{p.total_score || 0}</span>
                         {#if p.kategori_kelulusan}
-                          <Badge variant={p.kategori_kelulusan === "MS" ? "success" : p.kategori_kelulusan === "MMS" ? "warning" : "danger"} size="sm">
+                          <Badge
+                            variant={p.kategori_kelulusan === "MS"
+                              ? "success"
+                              : p.kategori_kelulusan === "MMS"
+                                ? "warning"
+                                : "danger"}
+                            size="sm"
+                          >
                             {p.kategori_kelulusan} ({p.jpm_percentage}%)
                           </Badge>
                         {/if}
@@ -418,7 +480,8 @@
                         <Button
                           variant="outline"
                           size="sm"
-                          onclick={() => (window.location.href = `/admin/reports?participantId=${p.id}`)}
+                          onclick={() =>
+                            (window.location.href = `/admin/reports?participantId=${p.id}`)}
                         >
                           Laporan JPM
                         </Button>
@@ -452,12 +515,16 @@
 >
   <div class="participant-selector-container">
     <p class="selector-intro">
-      Pilih pegawai ASN Pemerintah Kabupaten Trenggalek yang akan mengikuti sesi ujian ini:
+      Pilih pegawai ASN Pemerintah Kabupaten Trenggalek yang akan mengikuti sesi
+      ujian ini:
     </p>
 
     {#if allUsers.length === 0}
       <div class="empty-selection">
-        <p>Tidak ada pegawai ASN baru yang tersedia (semua sudah terdaftar pada sesi ini).</p>
+        <p>
+          Tidak ada pegawai ASN baru yang tersedia (semua sudah terdaftar pada
+          sesi ini).
+        </p>
       </div>
     {:else}
       <div class="user-selection-list">
@@ -469,7 +536,10 @@
             onclick={() => toggleUserSelection(user.id)}
             role="button"
             tabindex="0"
-            onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") toggleUserSelection(user.id); }}
+            onkeydown={(e) => {
+              if (e.key === "Enter" || e.key === " ")
+                toggleUserSelection(user.id);
+            }}
           >
             <div class="select-checkbox" aria-hidden="true">
               <input type="checkbox" checked={isSelected} readonly />
@@ -477,7 +547,9 @@
             <div class="select-user-info">
               <strong>{user.nama}</strong>
               <span class="user-nip-sub">NIP: {user.nip} · {user.jabatan}</span>
-              <small class="unit-text">{user.unit_kerja} ({user.jenjang_jabatan})</small>
+              <small class="unit-text"
+                >{user.unit_kerja} ({user.jenjang_jabatan})</small
+              >
             </div>
           </div>
         {/each}
@@ -486,7 +558,11 @@
   </div>
 
   {#snippet footer()}
-    <Button variant="secondary" onclick={() => (isAddParticipantModalOpen = false)} disabled={isSubmitting}>
+    <Button
+      variant="secondary"
+      onclick={() => (isAddParticipantModalOpen = false)}
+      disabled={isSubmitting}
+    >
       Batal
     </Button>
     <Button
@@ -506,7 +582,9 @@
     <div class="projector-header">
       <div class="projector-brand">
         <span class="projector-badge">PEMKAB TRENGGALEK · PENTA+ CAT</span>
-        <span class="projector-clock">Waktu Ruang Ujian: {currentTimeDisplay}</span>
+        <span class="projector-clock"
+          >Waktu Ruang Ujian: {currentTimeDisplay}</span
+        >
       </div>
       <button
         type="button"
@@ -522,7 +600,8 @@
       <div class="projector-session-info">
         <h1 class="projector-title">{session.judul}</h1>
         <p class="projector-sub">
-          Kode Sesi: <strong>{session.kode_sesi}</strong> · Durasi: <strong>{session.durasi_menit} Menit</strong>
+          Kode Sesi: <strong>{session.kode_sesi}</strong> · Durasi:
+          <strong>{session.durasi_menit} Menit</strong>
         </p>
       </div>
 
@@ -535,12 +614,16 @@
           {session.token_sesi}
         </div>
         <p class="projector-instructions">
-          Masukkan 6 digit kode token di atas pada akun PENTA+ masing-masing untuk memulai lembar soal.
+          Masukkan 6 digit kode token di atas pada akun PENTA+ masing-masing
+          untuk memulai lembar soal.
         </p>
       </div>
 
       <div class="projector-footer-rule">
-        <span>⚠️ Dilarang membuka tab browser lain atau meninggalkan jendela ujian selama pengerjaan berlangsung.</span>
+        <span
+          >⚠️ Dilarang membuka tab browser lain atau meninggalkan jendela ujian
+          selama pengerjaan berlangsung.</span
+        >
       </div>
     </div>
   </div>
@@ -679,7 +762,8 @@
     background-color: #fffaf0;
   }
 
-  .participant-name-cell, .job-meta {
+  .participant-name-cell,
+  .job-meta {
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -689,19 +773,10 @@
     color: var(--color-brand-primary);
   }
 
-  .user-nip, .job-meta small {
+  .user-nip,
+  .job-meta small {
     font-size: 11px;
     color: var(--color-text-subtle);
-  }
-
-  .token-pill {
-    font-family: var(--font-family-mono);
-    font-weight: var(--font-weight-bold);
-    background-color: var(--color-bg-subtle);
-    padding: 3px 6px;
-    border-radius: var(--radius-sm);
-    color: var(--color-brand-primary);
-    border: 1px solid var(--color-border-strong);
   }
 
   .clean-proctoring {
@@ -782,7 +857,9 @@
     color: var(--color-text-subtle);
   }
 
-  .loading-state, .empty-state, .empty-selection {
+  .loading-state,
+  .empty-state,
+  .empty-selection {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -802,7 +879,9 @@
   }
 
   @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   /* Tahap 16: Banner Token Sesi Kolektif */
